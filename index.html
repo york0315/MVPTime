@@ -1,31 +1,48 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOSS計時器</title>
+    <title>RO BOSS計時器 Pro</title>
     <style>
+        /* === CSS 變數定義 (深色模式預設) === */
         :root {
             --bg-color: #1e1e1e;
             --sidebar-bg: #252526;
             --card-bg: #2d2d2d;
             --text-color: #e0e0e0;
+            --text-muted: #aaa;
+            --border-color: #444;
             --accent-color: #4CAF50;
             --danger-color: #f44336;
             --input-bg: #3e3e42;
-            --border-color: #444;
+            --modal-bg: #333;
+            --hover-bg: #3e3e42;
+        }
+
+        /* === 淺色模式 === */
+        [data-theme="light"] {
+            --bg-color: #f0f2f5;
+            --sidebar-bg: #ffffff;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --text-muted: #666;
+            --border-color: #ddd;
+            --input-bg: #f0f0f0;
+            --modal-bg: #fff;
+            --hover-bg: #f5f5f5;
         }
 
         * { box-sizing: border-box; }
-
         body {
             font-family: "Microsoft JhengHei", sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
             height: 100vh;
-            display: flex; /* 左右佈局核心 */
+            display: flex;
             overflow: hidden;
+            transition: background 0.3s, color 0.3s;
         }
 
         /* === 左側側邊欄 === */
@@ -36,44 +53,52 @@
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
+            transition: transform 0.3s ease, width 0.3s;
+            z-index: 10;
         }
 
         .sidebar-header {
             padding: 15px;
             border-bottom: 1px solid var(--border-color);
-            font-size: 1.2em;
             font-weight: bold;
-            text-align: center;
-            background: #181818;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .sidebar-content {
             flex: 1;
-            overflow-y: auto; /* 內容過多時可捲動 */
+            overflow-y: auto;
             padding: 10px;
         }
 
+        /* 側邊欄項目 */
         .monster-check-item {
             display: flex;
             align-items: center;
             padding: 8px 10px;
             cursor: pointer;
             border-radius: 4px;
-            transition: background 0.2s;
             user-select: none;
+            border-bottom: 1px solid transparent;
         }
-
-        .monster-check-item:hover { background-color: #3e3e42; }
-        .monster-check-item input { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
-        .monster-check-item label { cursor: pointer; flex: 1; font-size: 0.95em; }
+        .monster-check-item:hover { background-color: var(--hover-bg); }
+        .monster-check-item input { margin-right: 10px; cursor: pointer; transform: scale(1.2); }
+        .monster-check-item label { cursor: pointer; flex: 1; }
 
         .sidebar-footer {
             padding: 10px;
             border-top: 1px solid var(--border-color);
-            text-align: center;
-            font-size: 0.8em;
-            color: #888;
+            display: flex;
+            gap: 5px;
         }
+
+        /* 按鈕樣式 */
+        button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; font-weight: bold; color: white; transition: 0.2s; }
+        .btn-gray { background-color: #666; flex: 1; }
+        .btn-gray:hover { background-color: #555; }
+        .btn-icon { background: transparent; color: var(--text-color); font-size: 1.2em; padding: 5px; }
+        .btn-icon:hover { background-color: var(--hover-bg); }
 
         /* === 右側主內容 === */
         #main-content {
@@ -81,6 +106,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
         }
 
         #main-header {
@@ -89,19 +115,15 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--bg-color);
+            background-color: var(--bg-color);
         }
 
-        #main-header h2 { margin: 0; font-size: 1.5em; }
-        #loading-msg { color: #aaa; font-size: 0.9em; }
-
-        /* 卡片容器區 (Scrollable) */
         #card-container {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* 自動排列 */
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             grid-auto-rows: max-content;
             gap: 20px;
             align-content: start;
@@ -112,46 +134,76 @@
             background-color: var(--card-bg);
             border-radius: 8px;
             padding: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            border-left: 5px solid #666;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 5px solid #777;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            /* 平滑過渡效果 */
-            transition: border-color 0.3s, transform 0.2s, opacity 0.3s; 
+            gap: 8px;
+            transition: 0.3s;
         }
-
-        .boss-card.active { border-left-color: var(--accent-color); background-color: #333; }
+        .boss-card.active { border-left-color: var(--accent-color); background-color: var(--card-bg); box-shadow: 0 0 10px rgba(76, 175, 80, 0.2); }
         .boss-card.expired { border-left-color: var(--danger-color); border: 1px solid var(--danger-color); }
 
-        .card-header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #444; padding-bottom: 5px; }
-        .boss-name { font-size: 1.3em; font-weight: bold; color: #fff; }
-        .respawn-time { font-size: 0.9em; color: #aaa; }
+        .card-header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+        .boss-name { font-size: 1.3em; font-weight: bold; }
+        .respawn-time { font-size: 0.9em; color: var(--text-muted); }
 
         .timer-display {
             text-align: center; font-size: 1.8em; font-family: monospace; font-weight: bold;
             color: #ffd700; margin: 5px 0; background: #222; border-radius: 5px; padding: 5px;
         }
+        [data-theme="light"] .timer-display { background: #333; }
 
-        .end-time-display { text-align: center; font-size: 0.85em; color: #888; }
+        .end-time-display { text-align: center; font-size: 0.85em; color: var(--text-muted); }
 
-        .correction-area { background-color: #3a3a3a; padding: 8px; border-radius: 5px; display: flex; align-items: center; gap: 5px; }
-        .correction-area label { font-size: 0.8em; white-space: nowrap; }
-        input[type="number"] { width: 100%; background: var(--input-bg); border: 1px solid #555; color: white; padding: 4px; border-radius: 3px; text-align: center; }
-
-        button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; font-weight: bold; color: white; transition: background 0.2s; }
-        .btn-update { background-color: #2196F3; font-size: 0.8em; white-space: nowrap; }
-        .btn-update:hover { background-color: #1976D2; }
-        
-        .btn-kill { background-color: var(--danger-color); width: 100%; font-size: 1em; padding: 10px; margin-top: auto; }
-        .btn-kill:hover { background-color: #d32f2f; }
-
-        /* 響應式：手機版隱藏側邊欄 (或是做成漢堡選單，這裡先做簡單版) */
-        @media (max-width: 768px) {
-            body { flex-direction: column; height: auto; overflow: auto; }
-            #sidebar { width: 100%; height: 200px; border-right: none; border-bottom: 1px solid var(--border-color); }
-            #main-content { height: auto; overflow: visible; }
+        .correction-area { background-color: var(--input-bg); padding: 8px; border-radius: 5px; display: flex; align-items: center; gap: 5px; }
+        input[type="number"], input[type="text"] { 
+            background: var(--bg-color); border: 1px solid var(--border-color); 
+            color: var(--text-color); padding: 5px; border-radius: 3px; 
         }
+        
+        .btn-update { background-color: #2196F3; font-size: 0.8em; }
+        .btn-kill { background-color: var(--danger-color); width: 100%; font-size: 1em; padding: 10px; margin-top: auto; }
+
+        /* === 設定視窗 (Modal) === */
+        #settings-modal {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 100;
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: var(--modal-bg);
+            width: 500px; max-width: 95%; max-height: 90vh;
+            border-radius: 8px;
+            display: flex; flex-direction: column;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .modal-header { padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; display: flex; justify-content: space-between; }
+        .modal-body { padding: 20px; overflow-y: auto; }
+        .modal-section { margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px; }
+        .modal-section:last-child { border: none; }
+        .modal-footer { padding: 15px; border-top: 1px solid var(--border-color); text-align: right; }
+
+        /* 管理列表樣式 */
+        .manage-list-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px; background: var(--input-bg); margin-bottom: 5px; border-radius: 4px;
+        }
+        .manage-controls button { font-size: 0.8em; padding: 2px 8px; margin-left: 2px; }
+        
+        /* 小工具模式 (Widget Mode) */
+        body.widget-mode #sidebar { display: none; }
+        body.widget-mode #card-container {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            padding: 10px;
+        }
+        body.widget-mode .boss-card { padding: 10px; }
+        body.widget-mode .boss-name { font-size: 1.1em; }
+        body.widget-mode .timer-display { font-size: 1.4em; }
+        body.widget-mode .correction-area { display: none; } /* 小模式隱藏修正區 */
+
     </style>
 </head>
 <body>
@@ -159,14 +211,15 @@
     <!-- 左側選單 -->
     <div id="sidebar">
         <div class="sidebar-header">
-            魔物篩選清單
+            <span>魔物清單</span>
+            <button class="btn-icon" onclick="openSettings()" title="設定">⚙️</button>
         </div>
         <div class="sidebar-content" id="sidebar-list">
-            <!-- Checkbox 會由 JS 生成 -->
+            <!-- JS 生成清單 -->
         </div>
         <div class="sidebar-footer">
-            <button onclick="toggleAll(true)" style="background:#444; font-size:0.8em;">全選</button>
-            <button onclick="toggleAll(false)" style="background:#444; font-size:0.8em;">全取消</button>
+            <button class="btn-gray" onclick="toggleAll(true)">全選</button>
+            <button class="btn-gray" onclick="toggleAll(false)">全取消</button>
         </div>
     </div>
 
@@ -174,72 +227,163 @@
     <div id="main-content">
         <div id="main-header">
             <h2>BOSS計時器</h2>
-            <span id="loading-msg">讀取資料中...</span>
+            <button class="btn-gray" id="widget-toggle-btn" onclick="toggleWidgetMode()">切換小工具模式</button>
         </div>
-        
         <div id="card-container">
-            <!-- 卡片會由 JS 生成 -->
+            <!-- JS 生成卡片 -->
+        </div>
+    </div>
+
+    <!-- 設定視窗 -->
+    <div id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>設定</span>
+                <button class="btn-icon" onclick="closeSettings()">✕</button>
+            </div>
+            <div class="modal-body">
+                
+                <!-- 一般設定 -->
+                <div class="modal-section">
+                    <h3>一般設定</h3>
+                    <label style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                        <input type="checkbox" id="chk-notify" onchange="saveSettings()">
+                        啟用重生系統通知 (瀏覽器彈窗)
+                    </label>
+                    <label style="display:flex; align-items:center; gap:10px;">
+                        <input type="checkbox" id="chk-theme" onchange="toggleTheme()">
+                        使用淺色模式 (Light Mode)
+                    </label>
+                </div>
+
+                <!-- 新增魔物 -->
+                <div class="modal-section">
+                    <h3>新增魔物</h3>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="new-name" placeholder="魔物名稱" style="flex:2">
+                        <input type="number" id="new-time" placeholder="小時" style="flex:1">
+                        <button class="btn-update" onclick="addNewMonster()">新增</button>
+                    </div>
+                </div>
+
+                <!-- 管理清單 (排序/刪除) -->
+                <div class="modal-section">
+                    <h3>管理與排序清單</h3>
+                    <div id="manage-list-container" style="max-height: 200px; overflow-y: auto;">
+                        <!-- JS 生成 -->
+                    </div>
+                </div>
+
+                <!-- 資料備份 -->
+                <div class="modal-section">
+                    <h3>資料備份</h3>
+                    <button class="btn-gray" onclick="exportData()">匯出魔物清單 (.json)</button>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn-update" onclick="closeSettings()">關閉</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // 全域變數
-        let allBosses = []; // 所有魔物原始資料
-        let visibleIds = new Set(); // 紀錄哪些 ID 是被打勾的
+        // === 全域變數 ===
+        let allBosses = []; // 魔物資料 (Source of Truth)
+        let visibleIds = new Set(); // 勾選狀態
+        let settings = {
+            notify: false,
+            lightMode: false,
+            widgetMode: false
+        };
 
-        // 1. 初始化
+        // === 1. 初始化 ===
         async function init() {
-            try {
-                // 讀取 JSON
-                const response = await fetch('monsters.json');
-                if (!response.ok) throw new Error("無法讀取 monsters.json");
-                const jsonData = await response.json();
+            loadSettings();
+            await loadData();
+            
+            renderSidebar();
+            renderGrid();
+            renderManageList(); // 設定頁面的清單
 
-                // 讀取 倒數時間紀錄 (LocalStorage)
-                const savedTimes = JSON.parse(localStorage.getItem('ro_boss_timer_data') || '[]');
-                
-                // 讀取 勾選顯示狀態 (LocalStorage)
-                const savedVisibility = JSON.parse(localStorage.getItem('ro_boss_visible_ids') || 'null');
+            // 啟動計時器
+            setInterval(tick, 1000);
 
-                // 合併資料
-                allBosses = jsonData.map(def => {
-                    const found = savedTimes.find(s => s.id === def.id);
-                    return found ? { ...def, targetTime: found.targetTime } : { ...def, targetTime: null };
-                });
-
-                // 設定顯示狀態
-                if (savedVisibility) {
-                    visibleIds = new Set(savedVisibility);
-                } else {
-                    // 預設全選
-                    allBosses.forEach(b => visibleIds.add(b.id));
-                }
-
-                document.getElementById('loading-msg').innerText = "";
-                
-                renderSidebar();
-                renderGrid(); // 建立卡片 DOM
-                
-                // 啟動每秒計時 (只更新文字，不重繪 DOM)
-                setInterval(tick, 1000);
-
-            } catch (error) {
-                document.getElementById('loading-msg').innerHTML = 
-                    `<span style="color:red">錯誤: ${error.message}</span><br>請確認 monsters.json 存在且格式正確`;
+            // 申請通知權限
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
             }
         }
 
-        // 2. 渲染左側清單 (只執行一次)
+        // === 2. 資料讀取與儲存 ===
+        async function loadData() {
+            // 優先從 LocalStorage 讀取完整清單 (包含使用者新增/排序過的)
+            const localList = localStorage.getItem('ro_boss_list');
+            
+            if (localList) {
+                allBosses = JSON.parse(localList);
+            } else {
+                // 若無紀錄，嘗試讀取 JSON 作為預設值
+                try {
+                    const response = await fetch('monsters.json');
+                    if (response.ok) {
+                        allBosses = await response.json();
+                        // 補上 targetTime 欄位
+                        allBosses = allBosses.map(b => ({...b, targetTime: null}));
+                        saveData(); // 存入 LocalStorage 變成預設
+                    }
+                } catch (e) {
+                    console.error("無預設 JSON，使用空列表");
+                    allBosses = [];
+                }
+            }
+
+            // 讀取計時狀態 (時間不應被洗掉，需合併)
+            // 註：上面的 allBosses 包含了順序與基本資料，但 targetTime 我們需要從另一個 key 讀取比較保險，
+            // 或者直接把 targetTime 存在 ro_boss_list 裡面。這裡採用「存在 ro_boss_list」的一體化策略。
+            
+            // 讀取勾選狀態
+            const savedVis = localStorage.getItem('ro_boss_visible_ids');
+            if (savedVis) {
+                visibleIds = new Set(JSON.parse(savedVis));
+            } else {
+                // 預設全選
+                allBosses.forEach(b => visibleIds.add(b.id));
+            }
+        }
+
+        function saveData() {
+            // 儲存整個陣列 (包含順序、新增的魔物、以及當前的 targetTime)
+            localStorage.setItem('ro_boss_list', JSON.stringify(allBosses));
+        }
+
+        function loadSettings() {
+            const s = localStorage.getItem('ro_boss_settings');
+            if (s) settings = JSON.parse(s);
+            
+            // 應用設定
+            document.getElementById('chk-notify').checked = settings.notify;
+            document.getElementById('chk-theme').checked = settings.lightMode;
+            applyTheme();
+            if (settings.widgetMode) toggleWidgetMode(true);
+        }
+
+        function saveSettings() {
+            settings.notify = document.getElementById('chk-notify').checked;
+            // lightMode 在 toggleTheme 處理
+            localStorage.setItem('ro_boss_settings', JSON.stringify(settings));
+        }
+
+        // === 3. 介面渲染 (Sidebar & Grid) ===
         function renderSidebar() {
-            const sidebar = document.getElementById('sidebar-list');
-            sidebar.innerHTML = '';
+            const list = document.getElementById('sidebar-list');
+            list.innerHTML = '';
 
             allBosses.forEach(boss => {
                 const div = document.createElement('div');
                 div.className = 'monster-check-item';
                 div.onclick = (e) => {
-                    // 點擊整行也能觸發
-                    if(e.target.tagName !== 'INPUT') {
+                    if (e.target.tagName !== 'INPUT') {
                         const cb = div.querySelector('input');
                         cb.checked = !cb.checked;
                         toggleVisibility(boss.id, cb.checked);
@@ -248,95 +392,65 @@
 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
-                checkbox.id = `cb-${boss.id}`;
                 checkbox.checked = visibleIds.has(boss.id);
                 checkbox.onclick = (e) => {
-                    e.stopPropagation(); // 避免觸發 div 的 onclick
+                    e.stopPropagation();
                     toggleVisibility(boss.id, e.target.checked);
                 };
 
                 const label = document.createElement('label');
-                label.innerText = boss.name;
-                label.htmlFor = `cb-${boss.id}`;
+                label.innerText = `${boss.name} (${boss.respawnHour}H)`;
 
                 div.appendChild(checkbox);
                 div.appendChild(label);
-                sidebar.appendChild(div);
+                list.appendChild(div);
             });
         }
 
-        // 3. 處理勾選/取消
         function toggleVisibility(id, isChecked) {
             if (isChecked) visibleIds.add(id);
             else visibleIds.delete(id);
-
-            // 存檔
             localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
-            
-            // 更新右側畫面 (不重繪所有，只隱藏/顯示)
-            renderGrid(); 
+            renderGrid();
         }
 
         function toggleAll(state) {
             allBosses.forEach(b => state ? visibleIds.add(b.id) : visibleIds.delete(b.id));
             localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
-            renderSidebar(); // 更新 checkbox 狀態
+            renderSidebar();
             renderGrid();
         }
 
-        // 4. 渲染右側卡片 (核心邏輯：Diff更新，防止閃爍)
+        // 核心：右側卡片渲染 (No-Flicker 邏輯)
         function renderGrid() {
             const container = document.getElementById('card-container');
-            
-            // 取得目前應該顯示的魔物，並進行排序
-            const sortedList = getSortedBosses();
+            const sortedList = getSortedBosses(); // 取得排序後的清單
 
-            // --- DOM 操作策略 ---
-            // 我們不使用 innerHTML = ''，而是用 appendChild 移動元素，
-            // 這樣可以保留輸入框的焦點，並且不會閃爍。
-
-            // 先把現有的卡片做一個 Map 方便查找
             const existingCards = {};
-            container.querySelectorAll('.boss-card').forEach(card => {
-                const id = parseInt(card.dataset.id);
-                existingCards[id] = card;
-            });
+            container.querySelectorAll('.boss-card').forEach(c => existingCards[c.dataset.id] = c);
 
-            // 依照排序後的順序，將卡片加入容器 (appendChild 會自動把元素從舊位置移動到新位置)
             sortedList.forEach(boss => {
-                // 如果這個魔物不在勾選名單，且之前有產生過卡片，就移除 (或隱藏)
                 if (!visibleIds.has(boss.id)) {
-                    if (existingCards[boss.id]) {
-                        existingCards[boss.id].remove();
-                    }
+                    if (existingCards[boss.id]) existingCards[boss.id].remove();
                     return;
                 }
 
                 let card = existingCards[boss.id];
-
-                // 如果卡片不存在，建立新的
                 if (!card) {
                     card = createCardElement(boss);
-                    existingCards[boss.id] = card; // 加入追蹤
+                    existingCards[boss.id] = card;
                 }
-
-                // 更新資料綁定 (防止資料更新了但卡片是舊的)
-                updateCardVisuals(card, boss);
-
-                // 將卡片移動到最後 (因為我們是依照順序迴圈，所以會自動排好)
-                container.appendChild(card);
+                
+                updateCardVisuals(card, boss); // 更新文字
+                container.appendChild(card); // 自動排序
             });
-
-            // 清理：如果有卡片已經不在 sortedList (例如資料庫刪除了)，但畫面上還有，要移除
-            // (因為我們是跑 sortedList，這裡比較少發生，主要是處理 Unchecked)
         }
 
-        // 5. 建立單一卡片 DOM
         function createCardElement(boss) {
             const card = document.createElement('div');
             card.className = 'boss-card';
+            card.dataset.id = boss.id;
             card.id = `card-${boss.id}`;
-            card.dataset.id = boss.id; // 方便查找
             
             card.innerHTML = `
                 <div class="card-header">
@@ -356,83 +470,38 @@
             return card;
         }
 
-        // 6. 排序邏輯
+        // 排序邏輯：倒數中(剩餘時間少 -> 多) > 沒倒數(依照使用者自訂順序)
         function getSortedBosses() {
             return [...allBosses].sort((a, b) => {
                 const now = Date.now();
                 const aActive = a.targetTime !== null;
                 const bActive = b.targetTime !== null;
 
-                // 兩者都在倒數：剩餘時間短的排前面
                 if (aActive && bActive) return (a.targetTime - now) - (b.targetTime - now);
-                // A 倒數中，B 沒倒數 -> A 前
                 if (aActive && !bActive) return -1;
-                // B 倒數中，A 沒倒數 -> B 前
                 if (!aActive && bActive) return 1;
-                // 都沒倒數 -> 照 ID
-                return a.id - b.id;
+                
+                // 如果都沒倒數，依照原始陣列索引排序 (即使用者自訂順序)
+                return allBosses.indexOf(a) - allBosses.indexOf(b);
             });
         }
 
-        // 7. 存檔
-        function saveData() {
-            const dataToSave = allBosses.map(b => ({ id: b.id, targetTime: b.targetTime }));
-            localStorage.setItem('ro_boss_timer_data', JSON.stringify(dataToSave));
-        }
-
-        // 8. 操作：擊殺
-        function killBoss(id) {
-            const boss = allBosses.find(b => b.id === id);
-            if (boss) {
-                boss.targetTime = Date.now() + (boss.respawnHour * 3600000);
-                saveData();
-                renderGrid(); // 只有動作發生時才重新排序 DOM
-            }
-        }
-
-        // 9. 操作：手動修正
-        function manualUpdate(id) {
-            const boss = allBosses.find(b => b.id === id);
-            const hInput = document.getElementById(`h-${id}`);
-            const mInput = document.getElementById(`m-${id}`);
-            const h = parseInt(hInput.value) || 0;
-            const m = parseInt(mInput.value) || 0;
-
-            if (boss) {
-                if (hInput.value === "" && mInput.value === "" && h === 0 && m === 0) {
-                    boss.targetTime = null; // 清除
-                } else {
-                    boss.targetTime = Date.now() + (h * 3600000) + (m * 60000);
-                }
-                hInput.value = '';
-                mInput.value = '';
-                saveData();
-                renderGrid(); // 重新排序
-            }
-        }
-
-        // 10. 每秒執行：更新文字與顏色 (最輕量化)
+        // === 4. 計時核心 ===
         function tick() {
             const now = Date.now();
-            
-            // 只針對有顯示在畫面上的卡片做更新
-            // (不用跑 allBosses，跑 visibleIds 也可以，但直接抓 DOM 比較直覺)
-            const cards = document.querySelectorAll('.boss-card');
-            
-            cards.forEach(card => {
+            document.querySelectorAll('.boss-card').forEach(card => {
                 const id = parseInt(card.dataset.id);
                 const boss = allBosses.find(b => b.id === id);
-                if(boss) updateCardVisuals(card, boss, now);
+                if (boss) updateCardVisuals(card, boss, now);
             });
         }
 
-        // 輔助：更新單一卡片的視覺狀態 (不改結構)
         function updateCardVisuals(card, boss, now = Date.now()) {
             const timerEl = card.querySelector(`#timer-${boss.id}`);
             const endEl = card.querySelector(`#end-${boss.id}`);
-
-            if (boss.targetTime === null) {
-                if (timerEl.innerText !== "未計時") { // 簡單的 Diff 檢查
+            
+            if (!boss.targetTime) {
+                if (timerEl.innerText !== "未計時") {
                     timerEl.innerText = "未計時";
                     timerEl.style.color = "#777";
                     endEl.innerText = "等待擊殺...";
@@ -442,10 +511,8 @@
             }
 
             const diff = boss.targetTime - now;
-            
-            // 更新預計時間 (只算一次字串)
             const endDate = new Date(boss.targetTime);
-            const endTimeStr = `預計: ${pad(endDate.getHours())}:${pad(endDate.getMinutes())}:${pad(endDate.getSeconds())}`;
+            const endTimeStr = `預計: ${pad(endDate.getHours())}:${pad(endDate.getMinutes())}`;
             if (endEl.innerText !== endTimeStr) endEl.innerText = endTimeStr;
 
             if (diff <= 0) {
@@ -455,6 +522,7 @@
                     timerEl.style.color = "#ff4444";
                     card.classList.remove('active');
                     card.classList.add('expired');
+                    sendNotification(boss.name); // 發送通知
                 }
             } else {
                 // 倒數中
@@ -463,12 +531,10 @@
                 const s = Math.floor((diff % 60000) / 1000);
                 const timeStr = `${pad(h)}:${pad(m)}:${pad(s)}`;
                 
-                // 只有文字變才寫入 DOM
                 if (timerEl.innerText !== timeStr) {
                     timerEl.innerText = timeStr;
                     timerEl.style.color = "#ffd700";
                 }
-                
                 if (!card.classList.contains('active')) {
                     card.classList.add('active');
                     card.classList.remove('expired');
@@ -477,6 +543,159 @@
         }
 
         function pad(n) { return n < 10 ? '0'+n : n; }
+
+        function sendNotification(bossName) {
+            if (settings.notify && Notification.permission === "granted") {
+                // 避免重複通知：簡單檢查是否剛發送過 (這裡略過，直接發)
+                new Notification("BOSS重生提醒", {
+                    body: `${bossName} 已經重生了！`,
+                    icon: "" 
+                });
+            }
+        }
+
+        // === 5. 操作功能 (擊殺/修正) ===
+        function killBoss(id) {
+            const boss = allBosses.find(b => b.id === id);
+            if (boss) {
+                boss.targetTime = Date.now() + (boss.respawnHour * 3600000);
+                saveData();
+                renderGrid();
+            }
+        }
+
+        function manualUpdate(id) {
+            const boss = allBosses.find(b => b.id === id);
+            const h = parseInt(document.getElementById(`h-${id}`).value) || 0;
+            const m = parseInt(document.getElementById(`m-${id}`).value) || 0;
+            const isEmpty = document.getElementById(`h-${id}`).value === "" && document.getElementById(`m-${id}`).value === "";
+
+            if (boss) {
+                if (isEmpty && h === 0 && m === 0) boss.targetTime = null;
+                else boss.targetTime = Date.now() + (h * 3600000) + (m * 60000);
+                
+                document.getElementById(`h-${id}`).value = '';
+                document.getElementById(`m-${id}`).value = '';
+                saveData();
+                renderGrid();
+            }
+        }
+
+        // === 6. 設定與管理功能 ===
+        function openSettings() {
+            document.getElementById('settings-modal').style.display = 'flex';
+            renderManageList();
+        }
+        function closeSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+
+        // 新增魔物
+        function addNewMonster() {
+            const name = document.getElementById('new-name').value.trim();
+            const time = parseFloat(document.getElementById('new-time').value);
+
+            if (!name || isNaN(time)) {
+                alert("請輸入正確的名稱與時間");
+                return;
+            }
+
+            // 產生新 ID (找最大值+1)
+            const newId = allBosses.length > 0 ? Math.max(...allBosses.map(b => b.id)) + 1 : 1;
+            
+            allBosses.push({
+                id: newId,
+                name: name,
+                respawnHour: time,
+                targetTime: null
+            });
+            
+            visibleIds.add(newId); // 新增的預設勾選
+            
+            saveData();
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-time').value = '';
+            
+            renderManageList();
+            renderSidebar();
+            renderGrid();
+        }
+
+        // 渲染管理清單 (排序/刪除)
+        function renderManageList() {
+            const div = document.getElementById('manage-list-container');
+            div.innerHTML = '';
+            
+            allBosses.forEach((boss, index) => {
+                const item = document.createElement('div');
+                item.className = 'manage-list-item';
+                item.innerHTML = `
+                    <span>${boss.name}</span>
+                    <div class="manage-controls">
+                        <button onclick="moveMonster(${index}, -1)" ${index===0?'disabled':''}>↑</button>
+                        <button onclick="moveMonster(${index}, 1)" ${index===allBosses.length-1?'disabled':''}>↓</button>
+                        <button onclick="deleteMonster(${index})" style="background:#f44336;">✕</button>
+                    </div>
+                `;
+                div.appendChild(item);
+            });
+        }
+
+        // 移動順序
+        function moveMonster(index, direction) {
+            const temp = allBosses[index];
+            allBosses[index] = allBosses[index + direction];
+            allBosses[index + direction] = temp;
+            
+            saveData();
+            renderManageList();
+            renderSidebar();
+            renderGrid(); // 順序改變，主畫面也要變
+        }
+
+        // 刪除魔物
+        function deleteMonster(index) {
+            if(confirm(`確定要刪除 ${allBosses[index].name} 嗎？`)) {
+                allBosses.splice(index, 1);
+                saveData();
+                renderManageList();
+                renderSidebar();
+                renderGrid();
+            }
+        }
+
+        // 匯出資料
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allBosses, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "ro_boss_list.json");
+            document.body.appendChild(downloadAnchorNode); // firefox need this
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        // 切換深淺色
+        function toggleTheme() {
+            settings.lightMode = document.getElementById('chk-theme').checked;
+            applyTheme();
+            saveSettings();
+        }
+        function applyTheme() {
+            if (settings.lightMode) document.documentElement.setAttribute('data-theme', 'light');
+            else document.documentElement.removeAttribute('data-theme');
+        }
+
+        // 切換小工具模式
+        function toggleWidgetMode(forceState) {
+            if (typeof forceState !== 'undefined') settings.widgetMode = forceState;
+            else settings.widgetMode = !settings.widgetMode;
+            
+            if (settings.widgetMode) document.body.classList.add('widget-mode');
+            else document.body.classList.remove('widget-mode');
+            
+            saveSettings();
+        }
 
         // 啟動
         init();
