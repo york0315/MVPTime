@@ -1,0 +1,12 @@
+[
+    { "id": 1, "name": "白素貞", "respawnHour": 2 },
+    { "id": 2, "name": "黃金蟲", "respawnHour": 1 },
+    { "id": 3, "name": "巴風特", "respawnHour": 12 },
+    { "id": 4, "name": "虎王", "respawnHour": 1 },
+    { "id": 5, "name": "俄塞里斯", "respawnHour": 1 },
+    { "id": 6, "name": "死靈騎士", "respawnHour": 2 },
+    { "id": 7, "name": "皮里恩", "respawnHour": 2 },
+    { "id": 8, "name": "蟻后", "respawnHour": 2 },
+    { "id": 9, "name": "海盜之王", "respawnHour": 2 },
+    { "id": 10, "name": "月夜貓", "respawnHour": 1 }
+]
