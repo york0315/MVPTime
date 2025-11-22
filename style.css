@@ -215,12 +215,16 @@ button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; f
     position: relative;
 }
 
+/* [重要修正] 卡片容器設定 */
 #card-container {
     flex: 1;
     overflow-y: auto;
     padding: 20px;
     display: grid;
+    /* 確保卡片寬度固定，自動換行 */
     grid-template-columns: repeat(auto-fill, var(--card-width));
+    /* [修正] 關鍵：設定行高為內容自動撐開，防止塌陷 */
+    grid-auto-rows: max-content;
     gap: 20px;
     align-content: start;
     justify-content: start; 
@@ -244,8 +248,11 @@ button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; f
     transition: box-shadow 0.3s;
     will-change: transform;
     width: var(--card-width); 
-    overflow: hidden;
+    
+    /* [修正] 確保有最小高度，避免內容渲染前塌陷 */
+    min-height: 220px; 
     height: auto;
+    overflow: hidden;
 }
 
 span.border-anim { 
@@ -279,14 +286,13 @@ span.border-anim {
 }
 .btn-kill-header:hover { background-color: #d32f2f; }
 
-/* [修正] 計時器置中與內距 */
+/* 計時器 */
 .timer-group {
     display: flex; 
     flex-direction: row; 
     align-items: center; 
     justify-content: center; 
     background: var(--timer-bg); 
-    /* 加大上下 Padding 撐開高度，確保內容居中 */
     padding: 12px 5px; 
     border-radius: 5px; 
     margin: 2px 0;
@@ -294,17 +300,14 @@ span.border-anim {
     position: relative; 
 }
 
-/* [修正] 計時器字體行高 */
 .timer-display { 
     font-size: 1.7em; 
     font-family: monospace; 
     font-weight: bold; 
     color: var(--timer-color); 
     margin: 0; 
-    /* 鎖定行高並微調 padding-top 來達成視覺垂直置中 */
     line-height: 1; 
-    padding-top: 4px; /* 將文字稍微往下推 */
-    
+    padding-top: 4px; 
     letter-spacing: -0.5px; 
     text-align: center; 
     width: 100%; 
