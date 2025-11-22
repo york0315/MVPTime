@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RO BOSS計時器 Pro</title>
     <style>
-        /* === CSS 變數定義 (深色模式預設) === */
+        /* === CSS 變數定義 === */
         :root {
             --bg-color: #1e1e1e;
             --sidebar-bg: #252526;
@@ -20,7 +20,6 @@
             --hover-bg: #3e3e42;
         }
 
-        /* === 淺色模式 === */
         [data-theme="light"] {
             --bg-color: #f0f2f5;
             --sidebar-bg: #ffffff;
@@ -53,7 +52,6 @@
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
-            transition: transform 0.3s ease, width 0.3s;
             z-index: 10;
         }
 
@@ -72,7 +70,6 @@
             padding: 10px;
         }
 
-        /* 側邊欄項目 */
         .monster-check-item {
             display: flex;
             align-items: center;
@@ -144,9 +141,18 @@
         .boss-card.active { border-left-color: var(--accent-color); background-color: var(--card-bg); box-shadow: 0 0 10px rgba(76, 175, 80, 0.2); }
         .boss-card.expired { border-left-color: var(--danger-color); border: 1px solid var(--danger-color); }
 
-        .card-header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+        .card-header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 5px; }
         .boss-name { font-size: 1.3em; font-weight: bold; }
-        .respawn-time { font-size: 0.9em; color: var(--text-muted); }
+        .respawn-time-hint { font-size: 0.9em; color: var(--text-muted); }
+
+        /* 修改：將狀態文字樣式改得跟標題一樣大且明顯 */
+        .status-display {
+            text-align: center;
+            font-size: 1.2em; /* 調整與 .boss-name 接近 */
+            font-weight: bold;
+            color: var(--text-color); /* 與標題同色 */
+            margin-bottom: 2px;
+        }
 
         .timer-display {
             text-align: center; font-size: 1.8em; font-family: monospace; font-weight: bold;
@@ -154,15 +160,22 @@
         }
         [data-theme="light"] .timer-display { background: #333; }
 
-        .end-time-display { text-align: center; font-size: 0.85em; color: var(--text-muted); }
-
-        .correction-area { background-color: var(--input-bg); padding: 8px; border-radius: 5px; display: flex; align-items: center; gap: 5px; }
-        input[type="number"], input[type="text"] { 
+        /* 修正輸入框區域 */
+        .correction-area { 
+            background-color: var(--input-bg); padding: 8px; border-radius: 5px; 
+            display: flex; align-items: center; gap: 5px; 
+        }
+        .correction-area label { white-space: nowrap; font-size: 0.9em; }
+        
+        /* 修正：設定固定寬度避免被擠壓 */
+        input[type="number"] { 
             background: var(--bg-color); border: 1px solid var(--border-color); 
             color: var(--text-color); padding: 5px; border-radius: 3px; 
+            width: 60px; /* 固定寬度 */
+            text-align: center;
         }
         
-        .btn-update { background-color: #2196F3; font-size: 0.8em; }
+        .btn-update { background-color: #2196F3; font-size: 0.8em; white-space: nowrap; padding: 6px 10px; }
         .btn-kill { background-color: var(--danger-color); width: 100%; font-size: 1em; padding: 10px; margin-top: auto; }
 
         /* === 設定視窗 (Modal) === */
@@ -186,24 +199,28 @@
         .modal-section:last-child { border: none; }
         .modal-footer { padding: 15px; border-top: 1px solid var(--border-color); text-align: right; }
 
-        /* 管理列表樣式 */
+        /* === 拖曳列表樣式 === */
         .manage-list-item {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 8px; background: var(--input-bg); margin-bottom: 5px; border-radius: 4px;
+            padding: 10px; background: var(--input-bg); margin-bottom: 5px; border-radius: 4px;
+            cursor: grab; /* 游標變成抓取手勢 */
+            transition: background 0.2s, transform 0.2s;
         }
-        .manage-controls button { font-size: 0.8em; padding: 2px 8px; margin-left: 2px; }
-        
-        /* 小工具模式 (Widget Mode) */
-        body.widget-mode #sidebar { display: none; }
-        body.widget-mode #card-container {
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            padding: 10px;
+        .manage-list-item:active { cursor: grabbing; }
+        .manage-list-item.dragging { 
+            opacity: 0.5; 
+            background: var(--accent-color); 
+            border: 2px dashed #fff;
         }
-        body.widget-mode .boss-card { padding: 10px; }
-        body.widget-mode .boss-name { font-size: 1.1em; }
-        body.widget-mode .timer-display { font-size: 1.4em; }
-        body.widget-mode .correction-area { display: none; } /* 小模式隱藏修正區 */
+        .manage-list-item.drag-over {
+            border-bottom: 3px solid var(--accent-color);
+        }
 
+        .manage-controls button { font-size: 0.8em; padding: 4px 8px; }
+        input[type="text"] { 
+            background: var(--bg-color); border: 1px solid var(--border-color); 
+            color: var(--text-color); padding: 5px; border-radius: 3px; width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -227,7 +244,6 @@
     <div id="main-content">
         <div id="main-header">
             <h2>BOSS計時器</h2>
-            <button class="btn-gray" id="widget-toggle-btn" onclick="toggleWidgetMode()">切換小工具模式</button>
         </div>
         <div id="card-container">
             <!-- JS 生成卡片 -->
@@ -247,11 +263,11 @@
                 <div class="modal-section">
                     <h3>一般設定</h3>
                     <label style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                        <input type="checkbox" id="chk-notify" onchange="saveSettings()">
+                        <input type="checkbox" id="chk-notify" onchange="saveSettings()" style="width:auto;">
                         啟用重生系統通知 (瀏覽器彈窗)
                     </label>
                     <label style="display:flex; align-items:center; gap:10px;">
-                        <input type="checkbox" id="chk-theme" onchange="toggleTheme()">
+                        <input type="checkbox" id="chk-theme" onchange="toggleTheme()" style="width:auto;">
                         使用淺色模式 (Light Mode)
                     </label>
                 </div>
@@ -266,10 +282,10 @@
                     </div>
                 </div>
 
-                <!-- 管理清單 (排序/刪除) -->
+                <!-- 管理清單 (改為拖曳排序) -->
                 <div class="modal-section">
-                    <h3>管理與排序清單</h3>
-                    <div id="manage-list-container" style="max-height: 200px; overflow-y: auto;">
+                    <h3>管理與排序清單 (拖曳可調整順序)</h3>
+                    <div id="manage-list-container" style="max-height: 250px; overflow-y: auto;">
                         <!-- JS 生成 -->
                     </div>
                 </div>
@@ -289,12 +305,11 @@
 
     <script>
         // === 全域變數 ===
-        let allBosses = []; // 魔物資料 (Source of Truth)
-        let visibleIds = new Set(); // 勾選狀態
+        let allBosses = []; 
+        let visibleIds = new Set(); 
         let settings = {
             notify: false,
-            lightMode: false,
-            widgetMode: false
+            lightMode: false
         };
 
         // === 1. 初始化 ===
@@ -304,12 +319,9 @@
             
             renderSidebar();
             renderGrid();
-            renderManageList(); // 設定頁面的清單
-
-            // 啟動計時器
+            
             setInterval(tick, 1000);
 
-            // 申請通知權限
             if (Notification.permission !== "granted" && Notification.permission !== "denied") {
                 Notification.requestPermission();
             }
@@ -317,60 +329,44 @@
 
         // === 2. 資料讀取與儲存 ===
         async function loadData() {
-            // 優先從 LocalStorage 讀取完整清單 (包含使用者新增/排序過的)
             const localList = localStorage.getItem('ro_boss_list');
-            
             if (localList) {
                 allBosses = JSON.parse(localList);
             } else {
-                // 若無紀錄，嘗試讀取 JSON 作為預設值
                 try {
                     const response = await fetch('monsters.json');
                     if (response.ok) {
                         allBosses = await response.json();
-                        // 補上 targetTime 欄位
                         allBosses = allBosses.map(b => ({...b, targetTime: null}));
-                        saveData(); // 存入 LocalStorage 變成預設
+                        saveData();
                     }
                 } catch (e) {
-                    console.error("無預設 JSON，使用空列表");
                     allBosses = [];
                 }
             }
 
-            // 讀取計時狀態 (時間不應被洗掉，需合併)
-            // 註：上面的 allBosses 包含了順序與基本資料，但 targetTime 我們需要從另一個 key 讀取比較保險，
-            // 或者直接把 targetTime 存在 ro_boss_list 裡面。這裡採用「存在 ro_boss_list」的一體化策略。
-            
-            // 讀取勾選狀態
             const savedVis = localStorage.getItem('ro_boss_visible_ids');
             if (savedVis) {
                 visibleIds = new Set(JSON.parse(savedVis));
             } else {
-                // 預設全選
                 allBosses.forEach(b => visibleIds.add(b.id));
             }
         }
 
         function saveData() {
-            // 儲存整個陣列 (包含順序、新增的魔物、以及當前的 targetTime)
             localStorage.setItem('ro_boss_list', JSON.stringify(allBosses));
         }
 
         function loadSettings() {
             const s = localStorage.getItem('ro_boss_settings');
             if (s) settings = JSON.parse(s);
-            
-            // 應用設定
             document.getElementById('chk-notify').checked = settings.notify;
             document.getElementById('chk-theme').checked = settings.lightMode;
             applyTheme();
-            if (settings.widgetMode) toggleWidgetMode(true);
         }
 
         function saveSettings() {
             settings.notify = document.getElementById('chk-notify').checked;
-            // lightMode 在 toggleTheme 處理
             localStorage.setItem('ro_boss_settings', JSON.stringify(settings));
         }
 
@@ -392,6 +388,7 @@
 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
+                checkbox.style.width = 'auto'; // Reset checkbox width
                 checkbox.checked = visibleIds.has(boss.id);
                 checkbox.onclick = (e) => {
                     e.stopPropagation();
@@ -421,10 +418,9 @@
             renderGrid();
         }
 
-        // 核心：右側卡片渲染 (No-Flicker 邏輯)
         function renderGrid() {
             const container = document.getElementById('card-container');
-            const sortedList = getSortedBosses(); // 取得排序後的清單
+            const sortedList = getSortedBosses();
 
             const existingCards = {};
             container.querySelectorAll('.boss-card').forEach(c => existingCards[c.dataset.id] = c);
@@ -441,8 +437,8 @@
                     existingCards[boss.id] = card;
                 }
                 
-                updateCardVisuals(card, boss); // 更新文字
-                container.appendChild(card); // 自動排序
+                updateCardVisuals(card, boss);
+                container.appendChild(card);
             });
         }
 
@@ -452,13 +448,16 @@
             card.dataset.id = boss.id;
             card.id = `card-${boss.id}`;
             
+            // 修改：調整HTML結構，將狀態 (status-display) 移到計時器上方，並改變文字標籤
             card.innerHTML = `
                 <div class="card-header">
                     <span class="boss-name">${boss.name}</span>
-                    <span class="respawn-time">(${boss.respawnHour}H)</span>
+                    <span class="respawn-time-hint">(${boss.respawnHour}H)</span>
                 </div>
+                
+                <div class="status-display" id="status-${boss.id}">未追蹤</div>
                 <div class="timer-display" id="timer-${boss.id}">--:--:--</div>
-                <div class="end-time-display" id="end-${boss.id}">--:--</div>
+                
                 <div class="correction-area">
                     <label>修正:</label>
                     <input type="number" id="h-${boss.id}" placeholder="時" min="0">
@@ -470,7 +469,6 @@
             return card;
         }
 
-        // 排序邏輯：倒數中(剩餘時間少 -> 多) > 沒倒數(依照使用者自訂順序)
         function getSortedBosses() {
             return [...allBosses].sort((a, b) => {
                 const now = Date.now();
@@ -481,7 +479,6 @@
                 if (aActive && !bActive) return -1;
                 if (!aActive && bActive) return 1;
                 
-                // 如果都沒倒數，依照原始陣列索引排序 (即使用者自訂順序)
                 return allBosses.indexOf(a) - allBosses.indexOf(b);
             });
         }
@@ -498,13 +495,13 @@
 
         function updateCardVisuals(card, boss, now = Date.now()) {
             const timerEl = card.querySelector(`#timer-${boss.id}`);
-            const endEl = card.querySelector(`#end-${boss.id}`);
+            const statusEl = card.querySelector(`#status-${boss.id}`);
             
             if (!boss.targetTime) {
-                if (timerEl.innerText !== "未計時") {
-                    timerEl.innerText = "未計時";
+                if (statusEl.innerText !== "未追蹤") {
+                    statusEl.innerText = "未追蹤";
+                    timerEl.innerText = "--:--:--";
                     timerEl.style.color = "#777";
-                    endEl.innerText = "等待擊殺...";
                     card.classList.remove('active', 'expired');
                 }
                 return;
@@ -512,20 +509,19 @@
 
             const diff = boss.targetTime - now;
             const endDate = new Date(boss.targetTime);
-            const endTimeStr = `預計: ${pad(endDate.getHours())}:${pad(endDate.getMinutes())}`;
-            if (endEl.innerText !== endTimeStr) endEl.innerText = endTimeStr;
+            // 修改：狀態文字格式
+            const statusStr = `重生時間[ ${pad(endDate.getHours())}:${pad(endDate.getMinutes())} ]`;
+            if (statusEl.innerText !== statusStr) statusEl.innerText = statusStr;
 
             if (diff <= 0) {
-                // 時間到
                 if (timerEl.innerText !== "已重生!") {
                     timerEl.innerText = "已重生!";
                     timerEl.style.color = "#ff4444";
                     card.classList.remove('active');
                     card.classList.add('expired');
-                    sendNotification(boss.name); // 發送通知
+                    sendNotification(boss.name);
                 }
             } else {
-                // 倒數中
                 const h = Math.floor(diff / 3600000);
                 const m = Math.floor((diff % 3600000) / 60000);
                 const s = Math.floor((diff % 60000) / 1000);
@@ -546,7 +542,6 @@
 
         function sendNotification(bossName) {
             if (settings.notify && Notification.permission === "granted") {
-                // 避免重複通知：簡單檢查是否剛發送過 (這裡略過，直接發)
                 new Notification("BOSS重生提醒", {
                     body: `${bossName} 已經重生了！`,
                     icon: "" 
@@ -554,7 +549,7 @@
             }
         }
 
-        // === 5. 操作功能 (擊殺/修正) ===
+        // === 5. 操作功能 ===
         function killBoss(id) {
             const boss = allBosses.find(b => b.id === id);
             if (boss) {
@@ -581,7 +576,7 @@
             }
         }
 
-        // === 6. 設定與管理功能 ===
+        // === 6. 設定與拖曳功能 ===
         function openSettings() {
             document.getElementById('settings-modal').style.display = 'flex';
             renderManageList();
@@ -590,29 +585,16 @@
             document.getElementById('settings-modal').style.display = 'none';
         }
 
-        // 新增魔物
         function addNewMonster() {
             const name = document.getElementById('new-name').value.trim();
             const time = parseFloat(document.getElementById('new-time').value);
+            if (!name || isNaN(time)) return;
 
-            if (!name || isNaN(time)) {
-                alert("請輸入正確的名稱與時間");
-                return;
-            }
-
-            // 產生新 ID (找最大值+1)
             const newId = allBosses.length > 0 ? Math.max(...allBosses.map(b => b.id)) + 1 : 1;
-            
-            allBosses.push({
-                id: newId,
-                name: name,
-                respawnHour: time,
-                targetTime: null
-            });
-            
-            visibleIds.add(newId); // 新增的預設勾選
-            
+            allBosses.push({ id: newId, name: name, respawnHour: time, targetTime: null });
+            visibleIds.add(newId);
             saveData();
+            
             document.getElementById('new-name').value = '';
             document.getElementById('new-time').value = '';
             
@@ -621,39 +603,6 @@
             renderGrid();
         }
 
-        // 渲染管理清單 (排序/刪除)
-        function renderManageList() {
-            const div = document.getElementById('manage-list-container');
-            div.innerHTML = '';
-            
-            allBosses.forEach((boss, index) => {
-                const item = document.createElement('div');
-                item.className = 'manage-list-item';
-                item.innerHTML = `
-                    <span>${boss.name}</span>
-                    <div class="manage-controls">
-                        <button onclick="moveMonster(${index}, -1)" ${index===0?'disabled':''}>↑</button>
-                        <button onclick="moveMonster(${index}, 1)" ${index===allBosses.length-1?'disabled':''}>↓</button>
-                        <button onclick="deleteMonster(${index})" style="background:#f44336;">✕</button>
-                    </div>
-                `;
-                div.appendChild(item);
-            });
-        }
-
-        // 移動順序
-        function moveMonster(index, direction) {
-            const temp = allBosses[index];
-            allBosses[index] = allBosses[index + direction];
-            allBosses[index + direction] = temp;
-            
-            saveData();
-            renderManageList();
-            renderSidebar();
-            renderGrid(); // 順序改變，主畫面也要變
-        }
-
-        // 刪除魔物
         function deleteMonster(index) {
             if(confirm(`確定要刪除 ${allBosses[index].name} 嗎？`)) {
                 allBosses.splice(index, 1);
@@ -664,18 +613,87 @@
             }
         }
 
-        // 匯出資料
-        function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allBosses, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "ro_boss_list.json");
-            document.body.appendChild(downloadAnchorNode); // firefox need this
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
+        // --- 拖曳排序核心邏輯 ---
+        let dragSrcIndex = null;
+
+        function renderManageList() {
+            const div = document.getElementById('manage-list-container');
+            div.innerHTML = '';
+            
+            allBosses.forEach((boss, index) => {
+                const item = document.createElement('div');
+                item.className = 'manage-list-item';
+                item.draggable = true; // 啟用拖曳
+                item.dataset.index = index;
+                
+                item.innerHTML = `
+                    <span>${boss.name}</span>
+                    <div class="manage-controls">
+                        <button onclick="deleteMonster(${index})" style="background:#f44336;">✕</button>
+                    </div>
+                `;
+
+                // 拖曳事件監聽
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('dragleave', handleDragLeave);
+                item.addEventListener('drop', handleDrop);
+                item.addEventListener('dragend', handleDragEnd);
+
+                div.appendChild(item);
+            });
         }
 
-        // 切換深淺色
+        function handleDragStart(e) {
+            this.classList.add('dragging');
+            dragSrcIndex = Number(this.dataset.index);
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) e.preventDefault(); // 必要：允許放置
+            this.classList.add('drag-over');
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) e.stopPropagation();
+            
+            const dragDestIndex = Number(this.dataset.index);
+
+            if (dragSrcIndex !== dragDestIndex) {
+                // 交換陣列資料
+                const movedItem = allBosses[dragSrcIndex];
+                allBosses.splice(dragSrcIndex, 1);
+                allBosses.splice(dragDestIndex, 0, movedItem);
+                
+                saveData();
+                renderManageList(); // 重新渲染列表
+                renderSidebar();
+                renderGrid();
+            }
+            return false;
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.manage-list-item').forEach(item => item.classList.remove('drag-over'));
+        }
+
+        // 其他雜項
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allBosses, null, 2));
+            const a = document.createElement('a');
+            a.href = dataStr;
+            a.download = "ro_boss_list.json";
+            a.click();
+        }
+
         function toggleTheme() {
             settings.lightMode = document.getElementById('chk-theme').checked;
             applyTheme();
@@ -686,18 +704,6 @@
             else document.documentElement.removeAttribute('data-theme');
         }
 
-        // 切換小工具模式
-        function toggleWidgetMode(forceState) {
-            if (typeof forceState !== 'undefined') settings.widgetMode = forceState;
-            else settings.widgetMode = !settings.widgetMode;
-            
-            if (settings.widgetMode) document.body.classList.add('widget-mode');
-            else document.body.classList.remove('widget-mode');
-            
-            saveSettings();
-        }
-
-        // 啟動
         init();
     </script>
 </body>
