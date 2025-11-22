@@ -67,11 +67,18 @@
             overflow: visible;
         }
 
+        /* [修改] 側邊欄開關按鈕位置調整 */
         .sidebar-toggle-tab {
             position: absolute;
-            top: 50%;
+            /* 移除原本的垂直置中設定 */
+            /* top: 50%; */
+            /* transform: translateY(-50%); */
+            
+            /* 改為靠下方對齊 */
+            top: auto; 
+            bottom: 20px; /* 距離底部 20px */
+            
             left: 100%;
-            transform: translateY(-50%);
             width: 24px;
             height: 80px;
             background-color: var(--sidebar-bg);
@@ -125,7 +132,7 @@
         .notify-row { display: flex; align-items: center; justify-content: space-between; }
         .notify-row label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
         .notify-input-group { display: flex; align-items: center; gap: 5px; }
-        .notify-input-group input[type="number"] { width: 50px; padding: 2px; text-align: center; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 3px; }
+        .notify-input-group input[type="number"] { width: 40px; padding: 2px; text-align: center; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 3px; }
 
         .sidebar-controls {
             padding: 10px;
@@ -315,7 +322,6 @@
         </div>
 
         <div class="sidebar-notify-settings">
-            <!-- [新增] 浮動時間設定 -->
             <div class="notify-row">
                 <label>浮動時間</label>
                 <div class="notify-input-group">
@@ -399,15 +405,14 @@
     <script>
         let allBosses = []; 
         let visibleIds = new Set(); 
-        // [修改] 增加 floatMin 預設值
         let settings = { 
             notifyRespawn: false, 
             notifyCountdown: false, 
             notifyMin: 10,
-            floatMin: 10, // 預設浮動10分鐘
+            floatMin: 10, 
             lightMode: true 
         };
-        let currentTopBossId = null; // 用於追蹤第一名
+        let currentTopBossId = null; 
 
         async function init() {
             loadSettings();
@@ -481,7 +486,7 @@
             document.getElementById('chk-notify-respawn').checked = settings.notifyRespawn;
             document.getElementById('chk-notify-countdown').checked = settings.notifyCountdown;
             document.getElementById('inp-notify-min').value = settings.notifyMin;
-            document.getElementById('inp-float-min').value = settings.floatMin || 10; // 載入浮動設定
+            document.getElementById('inp-float-min').value = settings.floatMin || 10; 
             document.getElementById('chk-theme').checked = settings.lightMode;
             applyTheme();
         }
@@ -490,7 +495,7 @@
             settings.notifyRespawn = document.getElementById('chk-notify-respawn').checked;
             settings.notifyCountdown = document.getElementById('chk-notify-countdown').checked;
             settings.notifyMin = parseInt(document.getElementById('inp-notify-min').value) || 10;
-            settings.floatMin = parseInt(document.getElementById('inp-float-min').value) || 0; // 儲存浮動設定
+            settings.floatMin = parseInt(document.getElementById('inp-float-min').value) || 0; 
             localStorage.setItem('ro_boss_settings', JSON.stringify(settings));
         }
 
@@ -570,11 +575,10 @@
             const container = document.getElementById('card-container');
             const sortedList = getSortedBosses();
             
-            // [修正] 判斷第一名是否改變
             const newTopBoss = sortedList.length > 0 ? sortedList[0] : null;
             if (newTopBoss && currentTopBossId !== newTopBoss.id) {
                 currentTopBossId = newTopBoss.id;
-                container.scrollTop = 0; // 只有第一名改變時才置頂
+                container.scrollTop = 0; 
             }
 
             const firstPositions = new Map();
@@ -693,10 +697,8 @@
                     } 
                     else if (diff > 0 && settings.notifyCountdown) {
                         const remainingMin = Math.floor(diff / 60000);
-                        // [修正] 倒數通知邏輯：當進入 settings.notifyMin 的範圍時觸發
-                        // 例如設定10分，當時間剩下 09:59 (9) 時， 9 < 10，觸發
-                        if (remainingMin < settings.notifyMin && boss.lastCountdownMin !== remainingMin) {
-                            sendCountdownNotification(boss.name, remainingMin + 1); // 顯示 "剩餘10分" 而不是 "剩餘9分"
+                        if (remainingMin === (settings.notifyMin - 1) && boss.lastCountdownMin !== remainingMin) {
+                            sendCountdownNotification(boss.name, settings.notifyMin);
                             boss.lastCountdownMin = remainingMin;
                         }
                     }
@@ -757,7 +759,6 @@
                 const s = Math.floor((diff % 60000) / 1000);
                 const countDownStr = `${pad(h)}:${pad(m)}:${pad(s)}`;
                 
-                // [修正] 浮動時間格式：使用 settings.floatMin
                 const floatMinStr = Math.floor(boss.floatSec / 60);
                 const floatSecStr = boss.floatSec % 60;
                 const floatStr = `+ ${pad(floatMinStr)}:${pad(floatSecStr)}`;
@@ -779,7 +780,6 @@
 
         function sendNotification(bossName) {
             if (settings.notifyRespawn && Notification.permission === "granted") {
-                // [修正] 重生通知 requireInteraction: true
                 const n = new Notification("BOSS重生提醒", { 
                     body: `${bossName} 已經重生了！`, 
                     icon: "",
@@ -791,7 +791,6 @@
         function sendCountdownNotification(bossName, min) {
             if (Notification.permission === "granted") {
                 const n = new Notification("BOSS倒數提醒", { body: `${bossName} 將在 ${min} 分鐘後重生` });
-                // [修正] 3秒消失
                 setTimeout(() => n.close(), 3000);
             }
         }
@@ -799,13 +798,13 @@
         function killBoss(id) {
             const boss = allBosses.find(b => b.id === id);
             if (boss) {
-                // [修正] 使用自訂浮動時間 (settings.floatMin)
                 boss.targetTime = Date.now() + (boss.respawnHour * 3600000);
                 boss.floatSec = settings.floatMin * 60; 
                 boss.respawnNotified = false; 
                 boss.lastCountdownMin = null;
                 saveData();
                 renderGrid();
+                scrollToTop(); 
             }
         }
 
@@ -818,6 +817,7 @@
                 boss.lastCountdownMin = null;
                 saveData();
                 renderGrid();
+                scrollToTop(); 
             }
         }
 
@@ -838,11 +838,9 @@
                     boss.targetTime = null;
                 } else {
                     if (mode === 'remaining') {
-                        // [修正] 剩餘: 浮動0
                         boss.targetTime = Date.now() + (h * 3600000) + (m * 60000) + 60000;
                         boss.floatSec = 0;
                     } else {
-                        // [修正] 擊殺: 使用自訂浮動時間
                         const now = new Date();
                         let killTime = new Date();
                         killTime.setHours(h, m, 0, 0);
@@ -859,6 +857,7 @@
                 mInput.value = '';
                 saveData();
                 renderGrid();
+                scrollToTop(); 
             }
         }
 
@@ -904,6 +903,7 @@
             renderManageList();
             renderSidebar();
             renderGrid();
+            scrollToTop();
         }
 
         function deleteMonster(index) {
