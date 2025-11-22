@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW" data-theme="light">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,6 +7,7 @@
     <style>
         /* === CSS 變數定義 === */
         :root {
+            /* 預設為淺色模式 (Light Mode) */
             --bg-color: #f0f2f5;
             --sidebar-bg: #ffffff;
             --card-bg: #ffffff;
@@ -16,13 +17,15 @@
             --input-bg: #f0f0f0;
             --modal-bg: #fff;
             --hover-bg: #f5f5f5;
+            --timer-bg: #e0e0e0; /* 淺色模式下的計時條背景 */
             
             --accent-color: #4CAF50;
             --danger-color: #f44336;
             --card-border-width: 3px;
-            --card-width: 320px; /* 電腦版卡片固定寬度 */
+            --card-width: 320px; 
         }
 
+        /* 深色模式 (Dark Mode) */
         [data-theme="dark"] {
             --bg-color: #1e1e1e;
             --sidebar-bg: #252526;
@@ -33,6 +36,7 @@
             --input-bg: #3e3e42;
             --modal-bg: #333;
             --hover-bg: #3e3e42;
+            --timer-bg: #222; /* 深色模式下的計時條背景 */
         }
 
         * { box-sizing: border-box; }
@@ -198,14 +202,13 @@
             overflow-y: auto;
             padding: 20px;
             display: grid;
-            /* 電腦版預設：固定寬度，自動填滿 */
             grid-template-columns: repeat(auto-fill, var(--card-width));
             gap: 20px;
             align-content: start;
             justify-content: start; 
         }
 
-        /* === 卡片樣式 === */
+        /* === 卡片樣式 (Mobile Fix) === */
         .boss-card {
             background-color: var(--card-bg);
             border: var(--card-border-width) solid #666;
@@ -217,12 +220,24 @@
             gap: 8px;
             position: relative;
             transition: box-shadow 0.3s;
-            overflow: hidden;
             will-change: transform;
             width: var(--card-width); 
-            /* 確保最小高度，避免內容擠壓時高度消失 */
-            min-height: 240px; 
+            
+            /* [修正] 移除 overflow: hidden 以避免內容被切掉 */
+            /* overflow: hidden; */ 
+            /* [修正] 使用 auto height 並增加底部 padding */
+            height: auto;
+            padding-bottom: 15px;
         }
+
+        /* 由於移除了 overflow:hidden，邊框動畫需要調整 */
+        /* 將動畫限制在一個 inner container 或是改用其他方式。
+           為了保持 snake border，我們將 span 放在裡面，但要確保不超出圓角 */
+        .boss-card {
+            /* 恢復 overflow: hidden 才能有圓角邊框動畫，但要確保內容不溢出 */
+            overflow: hidden; 
+        }
+        /* 內容太擠導致按鈕消失通常是因為 height 不夠，這裡設定 flex-grow 讓中間內容撐開 */
 
         span.border-anim { position: absolute; display: none; }
         .boss-card.active span.border-anim { display: block; }
@@ -243,9 +258,37 @@
         .boss-name { font-size: 1.3em; font-weight: bold; }
         .respawn-time-hint { font-size: 0.9em; color: var(--text-muted); }
 
-        .status-display { text-align: center; font-size: 1.2em; font-weight: bold; color: var(--text-color); margin-bottom: 2px; min-height: 1.5em; }
-        .timer-display { text-align: center; font-size: 1.8em; font-family: monospace; font-weight: bold; color: #ffd700; margin: 5px 0; background: #222; border-radius: 5px; padding: 5px; z-index: 2; position: relative; }
-        [data-theme="light"] .timer-display { background: #333; }
+        /* [新增] 計時器群組容器 (整合顯示) */
+        .timer-group {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: var(--timer-bg);
+            padding: 8px;
+            border-radius: 5px;
+            margin: 5px 0;
+            z-index: 2;
+            position: relative;
+        }
+
+        .timer-display { 
+            font-size: 1.6em; 
+            font-family: monospace; 
+            font-weight: bold; 
+            color: #ffd700; 
+            margin: 0;
+            line-height: 1;
+        }
+        
+        .status-display { 
+            font-size: 0.9em; 
+            font-weight: bold; 
+            color: var(--text-muted); 
+            margin: 0;
+            white-space: nowrap;
+        }
 
         .correction-area { 
             background-color: var(--input-bg); 
@@ -258,7 +301,6 @@
             position: relative; 
         }
         
-        /* [新增] 模式選擇下拉選單 */
         .mode-select {
             background: var(--bg-color);
             border: 1px solid var(--border-color);
@@ -288,7 +330,7 @@
             flex-shrink: 0; 
         }
         
-        .btn-kill { background-color: var(--danger-color); width: 100%; font-size: 1em; padding: 10px; margin-top: auto; z-index: 2; position: relative; cursor: pointer; }
+        .btn-kill { background-color: var(--danger-color); width: 100%; font-size: 1em; padding: 12px; margin-top: auto; z-index: 2; position: relative; cursor: pointer; border-radius: 4px; }
         .btn-kill:hover { background-color: #d32f2f; }
 
         /* === 設定視窗 (Modal) === */
@@ -306,7 +348,7 @@
         .manage-controls button { font-size: 0.8em; padding: 4px 8px; }
         input[type="text"] { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; width: 100%; }
 
-        /* === RWD 響應式設計 (Mobile Fix) === */
+        /* === RWD 響應式設計 === */
         @media (max-width: 768px) {
             #sidebar {
                 position: fixed;
@@ -320,14 +362,14 @@
                 transform: translateX(280px);
             }
             
-            /* [修復] 手機版改為單欄，寬度 100% */
             #card-container {
-                grid-template-columns: 1fr; /* 強制一欄 */
+                grid-template-columns: 1fr; /* 手機強制單欄 */
                 padding: 10px;
             }
             .boss-card {
-                width: 100%; /* 填滿容器 */
-                max-width: none; /* 移除任何最大寬度限制 */
+                width: 100%; /* 填滿螢幕 */
+                max-width: none;
+                height: auto; /* 確保高度自適應 */
             }
         }
         
@@ -602,7 +644,6 @@
             });
         }
 
-        // [修改] 變更 placeholder 的輔助函數
         function updatePlaceholder(id, mode) {
             const hInput = document.getElementById(`h-${id}`);
             const mInput = document.getElementById(`m-${id}`);
@@ -620,6 +661,7 @@
             card.className = 'boss-card';
             card.dataset.id = boss.id;
             card.id = `card-${boss.id}`;
+            // [修改] 整合計時器與重生時間顯示
             card.innerHTML = `
                 <span class="border-anim"></span>
                 <span class="border-anim"></span>
@@ -631,11 +673,13 @@
                     <span class="respawn-time-hint">(${boss.respawnHour}H)</span>
                 </div>
                 
-                <div class="status-display" id="status-${boss.id}">未追蹤</div>
-                <div class="timer-display" id="timer-${boss.id}">--:--:--</div>
+                <!-- 整合的計時區域 -->
+                <div class="timer-group">
+                    <div class="timer-display" id="timer-${boss.id}">--:--:--</div>
+                    <div class="status-display" id="status-${boss.id}">未追蹤</div>
+                </div>
                 
                 <div class="correction-area">
-                    <!-- [新增] 模式選擇 -->
                     <select id="mode-${boss.id}" class="mode-select" onchange="updatePlaceholder(${boss.id}, this.value)">
                         <option value="remaining">剩餘</option>
                         <option value="killed">擊殺</option>
@@ -694,6 +738,7 @@
                     statusEl.innerText = "未追蹤";
                     timerEl.innerText = "--:--:--";
                     timerEl.style.color = "#777";
+                    // 恢復未追蹤時的樣式
                     card.classList.remove('active', 'expired');
                 }
                 return;
@@ -704,7 +749,8 @@
             
             const dateStr = `${endDate.getDate()}日`;
             const timeStr = `${pad(endDate.getHours())}:${pad(endDate.getMinutes())}`;
-            const statusStr = `重生時間[ ${dateStr} ${timeStr} ]`;
+            // [修改] 移除「重生時間」文字
+            const statusStr = `[ ${dateStr} ${timeStr} ]`;
             
             if (statusEl.innerText !== statusStr) statusEl.innerText = statusStr;
 
@@ -750,7 +796,6 @@
             }
         }
 
-        // [修改] manualUpdate 支援兩種模式
         function manualUpdate(id) {
             const boss = allBosses.find(b => b.id === id);
             const mode = document.getElementById(`mode-${id}`).value;
@@ -759,11 +804,8 @@
             
             let h = parseInt(hInput.value);
             let m = parseInt(mInput.value);
-            
-            // 如果未輸入，預設為 0
             if (isNaN(h)) h = 0;
             if (isNaN(m)) m = 0;
-
             const isEmpty = hInput.value === "" && mInput.value === "";
 
             if (boss) {
@@ -771,24 +813,17 @@
                     boss.targetTime = null;
                 } else {
                     if (mode === 'remaining') {
-                        // 模式 1: 剩餘 (現在 + 輸入時間)
                         boss.targetTime = Date.now() + (h * 3600000) + (m * 60000);
                     } else {
-                        // 模式 2: 擊殺 (指定時間)
                         const now = new Date();
                         let killTime = new Date();
-                        killTime.setHours(h, m, 0, 0); // 設定為今天的 H:M
-
-                        // 如果設定的時間大於現在時間 (例如現在 12:00，輸入 15:00)，判斷為昨天
+                        killTime.setHours(h, m, 0, 0);
                         if (killTime > now) {
                             killTime.setDate(killTime.getDate() - 1);
                         }
-
-                        // 目標時間 = 擊殺時間 + 重生CD
                         boss.targetTime = killTime.getTime() + (boss.respawnHour * 3600000);
                     }
                 }
-                
                 hInput.value = '';
                 mInput.value = '';
                 saveData();
@@ -899,7 +934,17 @@
         }
 
         function toggleTheme() { settings.lightMode = document.getElementById('chk-theme').checked; applyTheme(); saveSettings(); }
-        function applyTheme() { if (settings.lightMode) document.documentElement.setAttribute('data-theme', 'light'); else document.documentElement.removeAttribute('data-theme'); }
+        
+        // [修正] 深淺色切換邏輯
+        function applyTheme() { 
+            if (settings.lightMode) {
+                // 淺色模式：移除屬性，使用 :root 定義的淺色變數
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                // 深色模式：加入 data-theme="dark"
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        }
 
         window.addEventListener('resize', updateToggleButtonIcon);
 
