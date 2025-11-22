@@ -210,7 +210,7 @@
             background-color: var(--card-bg);
             border: var(--card-border-width) solid #666;
             border-radius: 8px;
-            padding: 12px; /* 稍微縮小 padding */
+            padding: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
@@ -238,131 +238,36 @@
         .boss-card.active { border-color: transparent; }
         .boss-card.expired { border-color: var(--danger-color); box-shadow: 0 0 10px rgba(244, 67, 54, 0.4); }
 
-        /* [修改] 卡片標題區 */
-        .card-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid var(--border-color); 
-            padding-bottom: 5px; 
-            margin-bottom: 5px; 
-        }
-        .header-left {
-            display: flex;
-            flex-wrap: wrap; /* 允許折行以防文字過長 */
-            align-items: baseline;
-            gap: 5px;
-            flex: 1;
-        }
-        .boss-duration {
-            font-size: 0.9em;
-            color: var(--accent-color);
-            font-weight: bold;
-            font-family: monospace;
-        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 5px; }
+        .header-left { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; flex: 1; }
+        .boss-duration { font-size: 0.9em; color: var(--accent-color); font-weight: bold; font-family: monospace; }
         .boss-name { font-size: 1.3em; font-weight: bold; }
-        .status-display { 
-            font-size: 0.85em; 
-            color: var(--text-muted); 
-            white-space: nowrap;
-            margin-left: 5px;
-        }
+        .status-display { font-size: 0.85em; color: var(--text-muted); white-space: nowrap; margin-left: 5px; }
 
-        /* [新增] 標題右側的擊殺按鈕 */
         .btn-kill-header {
-            background-color: var(--danger-color);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 4px 10px;
-            font-size: 0.9em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-left: 8px;
-            white-space: nowrap;
+            background-color: var(--danger-color); color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.9em; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-left: 8px; white-space: nowrap;
         }
         .btn-kill-header:hover { background-color: #d32f2f; }
 
-        /* 計時器 */
         .timer-group {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
-            background: var(--timer-bg);
-            padding: 5px; 
-            border-radius: 5px;
-            margin: 2px 0;
-            z-index: 2;
-            position: relative;
-            min-height: 45px; /* 確保高度 */
+            display: flex; flexDirection: row; alignItems: center; justifyContent: center;
+            background: var(--timer-bg); padding: 5px; border-radius: 5px; margin: 2px 0;
+            z-index: 2; position: relative; min-height: 45px;
         }
 
-        .timer-display { 
-            font-size: 1.8em; 
-            font-family: monospace; 
-            font-weight: bold; 
-            color: var(--timer-color);
-            margin: 0;
-            line-height: 1;
-        }
+        .timer-display { font-size: 1.8em; font-family: monospace; font-weight: bold; color: var(--timer-color); margin: 0; line-height: 1; }
         
-        /* 修正區塊 */
         .correction-area { 
-            background-color: var(--input-bg); 
-            padding: 5px; 
-            border-radius: 5px; 
-            display: flex; 
-            align-items: center; 
-            gap: 5px; 
-            z-index: 2; 
-            position: relative; 
-            margin-top: auto; /* 推到底部 */
+            background-color: var(--input-bg); padding: 5px; border-radius: 5px; 
+            display: flex; align-items: center; gap: 5px; 
+            z-index: 2; position: relative; margin-top: auto;
         }
         
-        .mode-select {
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 5px;
-            border-radius: 3px;
-            font-size: 0.8em;
-            cursor: pointer;
-        }
-
-        .correction-area input[type="number"] { 
-            flex: 1; 
-            background: var(--bg-color); 
-            border: 1px solid var(--border-color); 
-            color: var(--text-color); 
-            padding: 5px; 
-            border-radius: 3px; 
-            min-width: 0; 
-            text-align: center; 
-        }
+        .mode-select { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; font-size: 0.8em; cursor: pointer; }
+        .correction-area input[type="number"] { flex: 1; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; min-width: 0; text-align: center; }
         
-        .btn-update { 
-            background-color: #2196F3; 
-            font-size: 0.8em; 
-            white-space: nowrap; 
-            padding: 6px 10px; 
-            flex-shrink: 0; 
-            font-weight: bold;
-            color: white;
-        }
-        
-        /* [修改] 取消按鈕樣式 */
-        .btn-cancel {
-            background-color: #9e9e9e;
-            font-size: 0.8em;
-            white-space: nowrap;
-            padding: 6px 10px;
-            flex-shrink: 0;
-            font-weight: bold;
-            color: white;
-            border-radius: 4px;
-        }
+        .btn-update { background-color: #2196F3; font-size: 0.8em; white-space: nowrap; padding: 6px 10px; flex-shrink: 0; font-weight: bold; color: white; }
+        .btn-cancel { background-color: #9e9e9e; font-size: 0.8em; white-space: nowrap; padding: 6px 10px; flex-shrink: 0; font-weight: bold; color: white; border-radius: 4px; }
         .btn-cancel:hover { background-color: #757575; }
 
         /* === 設定視窗 (Modal) === */
@@ -383,33 +288,15 @@
         /* === RWD 響應式設計 === */
         @media (max-width: 768px) {
             #sidebar {
-                position: fixed;
-                left: -280px;
-                top: 0;
-                bottom: 0;
-                height: 100%;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+                position: fixed; left: -280px; top: 0; bottom: 0; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.5);
             }
-            #sidebar.open {
-                transform: translateX(280px);
-            }
-            
-            #card-container {
-                grid-template-columns: 1fr;
-                padding: 10px;
-                grid-auto-rows: min-content;
-            }
-            .boss-card {
-                width: 100%;
-                max-width: none;
-                height: auto;
-            }
+            #sidebar.open { transform: translateX(280px); }
+            #card-container { grid-template-columns: 1fr; padding: 10px; grid-auto-rows: min-content; }
+            .boss-card { width: 100%; max-width: none; height: auto; }
         }
         
         @media (min-width: 769px) {
-            #sidebar.hidden {
-                margin-left: -280px;
-            }
+            #sidebar.hidden { margin-left: -280px; }
         }
 
     </style>
@@ -484,7 +371,6 @@
                 </div>
                 <div class="modal-section">
                     <h3>新增魔物</h3>
-                    <!-- [修改] 新增分鐘輸入框 -->
                     <div style="display:flex; gap:10px; align-items: center;">
                         <input type="text" id="new-name" placeholder="名稱" style="flex:2">
                         <input type="number" id="new-time" placeholder="時" style="flex:1; min-width: 50px;">
@@ -711,7 +597,6 @@
             card.dataset.id = boss.id;
             card.id = `card-${boss.id}`;
             
-            // [修改] 卡片結構重組
             card.innerHTML = `
                 <span class="border-anim"></span>
                 <span class="border-anim"></span>
@@ -773,8 +658,10 @@
                     } 
                     else if (diff > 0 && settings.notifyCountdown) {
                         const remainingMin = Math.floor(diff / 60000);
-                        if (remainingMin <= settings.notifyMin && boss.lastCountdownMin !== remainingMin) {
-                            sendCountdownNotification(boss.name, remainingMin);
+                        // [修正] 邏輯: 3分59秒算4分，所以當 floor(diff/60000) == settings.notifyMin - 1 時，就是進入 X 分鐘
+                        // 例如: 設定 3 分鐘。 當時間變為 2:59， floor 是 2。 2 == 3-1。 觸發。
+                        if (remainingMin === (settings.notifyMin - 1) && boss.lastCountdownMin !== remainingMin) {
+                            sendCountdownNotification(boss.name, settings.notifyMin);
                             boss.lastCountdownMin = remainingMin;
                         }
                     }
@@ -796,7 +683,6 @@
             const statusEl = card.querySelector(`#status-${boss.id}`);
             
             if (!boss.targetTime) {
-                // 未追蹤時，隱藏上方時間，計時器顯示虛線
                 statusEl.innerText = ""; 
                 statusEl.style.display = 'none';
                 
@@ -815,7 +701,7 @@
             
             if (statusEl.innerText !== statusStr) {
                 statusEl.innerText = statusStr;
-                statusEl.style.display = 'inline'; // 顯示
+                statusEl.style.display = 'inline'; 
             }
 
             if (diff <= 0) {
@@ -851,21 +737,28 @@
         function pad(n) { return n < 10 ? '0'+n : n; }
 
         function sendNotification(bossName) {
-            if (Notification.permission === "granted") {
-                new Notification("BOSS重生提醒", { body: `${bossName} 已經重生了！`, icon: "" });
+            if (settings.notifyRespawn && Notification.permission === "granted") {
+                // [修正] 重生通知要 sticky (requireInteraction)
+                const n = new Notification("BOSS重生提醒", { 
+                    body: `${bossName} 已經重生了！`, 
+                    icon: "",
+                    requireInteraction: true 
+                });
             }
         }
 
         function sendCountdownNotification(bossName, min) {
             if (Notification.permission === "granted") {
                 const n = new Notification("BOSS倒數提醒", { body: `${bossName} 將在 ${min} 分鐘後重生` });
-                setTimeout(() => n.close(), 5000);
+                // [修正] 3秒後自動關閉
+                setTimeout(() => n.close(), 3000);
             }
         }
 
         function killBoss(id) {
             const boss = allBosses.find(b => b.id === id);
             if (boss) {
+                // [修正] 擊殺: +10分鐘浮動
                 boss.targetTime = Date.now() + (boss.respawnHour * 3600000) + 600000;
                 boss.respawnNotified = false; 
                 boss.lastCountdownMin = null;
@@ -902,8 +795,10 @@
                     boss.targetTime = null;
                 } else {
                     if (mode === 'remaining') {
-                        boss.targetTime = Date.now() + (h * 3600000) + (m * 60000) + 60000;
+                        // [修正] 剩餘: 浮動0 (精確)
+                        boss.targetTime = Date.now() + (h * 3600000) + (m * 60000);
                     } else {
+                        // [修正] 擊殺: +10分鐘浮動
                         const now = new Date();
                         let killTime = new Date();
                         killTime.setHours(h, m, 0, 0);
@@ -936,12 +831,10 @@
             const hour = parseFloat(timeStr) || 0;
             const min = parseFloat(minStr) || 0;
 
-            // 防呆
             if (!name) {
                 alert("請輸入魔物名稱！");
                 return;
             }
-            // 必須至少輸入小時或分鐘
             if (timeStr === "" && minStr === "") {
                 alert("請輸入重生時間 (小時或分鐘)！");
                 return;
@@ -951,7 +844,6 @@
                 return;
             }
 
-            // 計算總小時數 (存成浮點數)
             const totalHours = hour + (min / 60);
 
             const newId = allBosses.length > 0 ? Math.max(...allBosses.map(b => b.id)) + 1 : 1;
