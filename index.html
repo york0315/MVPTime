@@ -18,8 +18,6 @@
             --modal-bg: #fff;
             --hover-bg: #f5f5f5;
             --timer-bg: #e0e0e0; 
-            
-            /* [修改] 淺色模式下的倒數計時顏色 (深紅色，提高對比) */
             --timer-color: #c62828; 
             
             --accent-color: #4CAF50;
@@ -40,8 +38,6 @@
             --modal-bg: #333;
             --hover-bg: #3e3e42;
             --timer-bg: #222;
-            
-            /* [修改] 深色模式下的倒數計時顏色 (金黃色) */
             --timer-color: #ffd700; 
         }
 
@@ -266,12 +262,11 @@
             position: relative;
         }
 
-        /* [修改] 使用 CSS 變數控制顏色 */
         .timer-display { 
             font-size: 1.6em; 
             font-family: monospace; 
             font-weight: bold; 
-            color: var(--timer-color); /* 改這裡 */
+            color: var(--timer-color);
             margin: 0;
             line-height: 1;
         }
@@ -324,7 +319,6 @@
             flex-shrink: 0; 
         }
         
-        /* [新增] 底部按鈕群組容器 */
         .card-actions {
             display: flex;
             gap: 10px;
@@ -333,10 +327,10 @@
             position: relative;
         }
 
-        /* [修改] 擊殺按鈕 (flex-grow 讓它佔大位) */
+        /* [修改] 擊殺按鈕 (主按鈕) */
         .btn-kill { 
             background-color: var(--danger-color); 
-            flex: 2; /* 佔 2/3 */
+            flex: 1; /* 讓它填滿剩餘空間 */
             font-size: 1em; 
             padding: 12px; 
             cursor: pointer; 
@@ -345,10 +339,11 @@
         }
         .btn-kill:hover { background-color: #d32f2f; }
 
-        /* [新增] 取消按鈕 */
+        /* [修改] 取消按鈕 (右側小按鈕) */
         .btn-cancel {
             background-color: #9e9e9e;
-            flex: 1; /* 佔 1/3 */
+            flex: 0 0 auto; /* 不縮放，依內容決定寬度 */
+            min-width: 60px; /* 設定最小寬度 */
             font-size: 1em;
             padding: 12px;
             cursor: pointer;
@@ -423,6 +418,8 @@
                 <option value="name-asc">排序：名稱 (A → Z)</option>
                 <option value="name-desc">排序：名稱 (Z → A)</option>
                 <option value="time-asc">排序：重生時間 (短 → 長)</option>
+                <!-- [新增] 排序選項 -->
+                <option value="time-desc">排序：重生時間 (長 → 短)</option>
             </select>
         </div>
         <div class="sidebar-content" id="sidebar-list"></div>
@@ -579,6 +576,8 @@
             if (sortType === 'name-asc') displayList.sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
             else if (sortType === 'name-desc') displayList.sort((a, b) => b.name.localeCompare(a.name, "zh-Hant"));
             else if (sortType === 'time-asc') displayList.sort((a, b) => a.respawnHour - b.respawnHour);
+            // [新增] 重生時間 長到短
+            else if (sortType === 'time-desc') displayList.sort((a, b) => b.respawnHour - a.respawnHour);
             else if (sortType === 'checked-first') {
                 displayList.sort((a, b) => {
                     const aChecked = visibleIds.has(a.id) ? 1 : 0;
@@ -685,7 +684,7 @@
             card.className = 'boss-card';
             card.dataset.id = boss.id;
             card.id = `card-${boss.id}`;
-            // [修改] 加入 card-actions 區塊包含兩個按鈕
+            // [修改] 按鈕順序：擊殺在左，取消在右
             card.innerHTML = `
                 <span class="border-anim"></span>
                 <span class="border-anim"></span>
@@ -713,8 +712,8 @@
                 </div>
                 
                 <div class="card-actions">
-                    <button class="btn-cancel" onclick="cancelTimer(${boss.id})">取消</button>
                     <button class="btn-kill" onclick="killBoss(${boss.id})">擊殺</button>
+                    <button class="btn-cancel" onclick="cancelTimer(${boss.id})">取消</button>
                 </div>
             `;
             return card;
@@ -795,7 +794,8 @@
                 
                 if (timerEl.innerText !== countDownStr) {
                     timerEl.innerText = countDownStr;
-                    timerEl.style.color = "var(--timer-color)"; // 使用變數
+                    // 使用 CSS 變數
+                    timerEl.style.color = "var(--timer-color)"; 
                 }
                 if (!card.classList.contains('active')) {
                     card.classList.add('active');
@@ -821,7 +821,6 @@
             }
         }
 
-        // [新增] 取消追蹤功能
         function cancelTimer(id) {
             const boss = allBosses.find(b => b.id === id);
             if (boss) {
@@ -970,7 +969,6 @@
 
         function toggleTheme() { settings.lightMode = document.getElementById('chk-theme').checked; applyTheme(); saveSettings(); }
         
-        // [修改] 深淺色切換邏輯
         function applyTheme() { 
             if (settings.lightMode) {
                 document.documentElement.removeAttribute('data-theme');
