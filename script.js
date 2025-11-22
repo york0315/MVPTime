@@ -10,7 +10,7 @@ let settings = {
 };
 let currentSortType = 'default';
 let currentTopBossId = null; 
-let timerWorker = null; // [新增] 用來存儲 Worker 實例
+let timerWorker = null; 
 
 async function init() {
     loadSettings();
@@ -18,10 +18,8 @@ async function init() {
     renderSidebar();
     renderGrid();
     
-    // [修改] 不使用 setInterval(tick, 1000)，改用 Web Worker 避免背景凍結
     startBackgroundTimer();
 
-    // [新增] 監聽網頁可見度，當使用者切換回來或解鎖螢幕時，強制立即更新一次
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === 'visible') {
             tick();
@@ -34,9 +32,7 @@ async function init() {
     updateToggleButtonIcon();
 }
 
-// [新增] 啟動背景計時器 (Web Worker)
 function startBackgroundTimer() {
-    // 建立一個虛擬的 Worker 代碼，讓它每秒發送一次訊號
     const workerCode = `
         self.onmessage = function(e) {
             if (e.data === 'start') {
@@ -46,19 +42,13 @@ function startBackgroundTimer() {
             }
         };
     `;
-
-    // 將代碼轉為 Blob 物件
     const blob = new Blob([workerCode], { type: "application/javascript" });
     timerWorker = new Worker(URL.createObjectURL(blob));
-
-    // 接收 Worker 的訊號來執行 tick
     timerWorker.onmessage = function(e) {
         if (e.data === 'tick') {
             tick();
         }
     };
-
-    // 啟動 Worker
     timerWorker.postMessage('start');
 }
 
