@@ -15,6 +15,10 @@ let timerWorker = null;
 async function init() {
     loadSettings();
     await loadData();
+    
+    // [新增] 檢查是否為分享連結
+    checkShareUrl();
+
     renderSidebar();
     renderGrid();
     
@@ -30,6 +34,77 @@ async function init() {
         Notification.requestPermission();
     }
     updateToggleButtonIcon();
+}
+
+// [新增] 產生分享連結
+function generateShareLink() {
+    const activeTimers = allBosses
+        .filter(b => b.targetTime !== null)
+        .map(b => ({ i: b.id, t: b.targetTime, f: b.floatSec || 0 })); // i=id, t=targetTime, f=floatSec
+    
+    if (activeTimers.length === 0) {
+        alert("目前沒有正在倒數的魔物，無法分享！");
+        return;
+    }
+    
+    // 簡單編碼：JSON -> Base64
+    const jsonStr = JSON.stringify(activeTimers);
+    const b64 = btoa(jsonStr);
+    
+    // 組合網址 (相容 Github Pages)
+    const url = `${window.location.origin}${window.location.pathname}?share=${b64}`;
+    
+    // 複製到剪貼簿
+    navigator.clipboard.writeText(url).then(() => {
+        alert("已複製分享連結！\n傳送給朋友即可同步目前的倒數時間。");
+    }).catch(err => {
+        console.error(err);
+        alert("複製失敗，請手動複製網址列(如果有變化的話)");
+    });
+}
+
+// [新增] 檢查並讀取分享連結
+function checkShareUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const shareData = params.get('share');
+    
+    if (shareData) {
+        try {
+            const decoded = atob(shareData);
+            const importedTimers = JSON.parse(decoded);
+            
+            let count = 0;
+            importedTimers.forEach(item => {
+                // 尋找對應 ID 的魔物
+                const boss = allBosses.find(b => b.id === item.i);
+                if (boss) {
+                    boss.targetTime = item.t;
+                    boss.floatSec = item.f || 0;
+                    boss.respawnNotified = false; // 重置通知
+                    
+                    // 強制顯示該魔物
+                    visibleIds.add(boss.id);
+                    if (boss.onSidebar === false) boss.onSidebar = true; // 確保側邊欄也打開
+                    
+                    count++;
+                }
+            });
+            
+            if (count > 0) {
+                saveData();
+                localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
+                
+                // 清除網址參數，避免重新整理重複載入
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                alert(`已成功同步 ${count} 隻魔物的倒數時間！`);
+            }
+            
+        } catch (e) {
+            console.error("解析分享連結失敗", e);
+            alert("無效的分享連結！");
+        }
+    }
 }
 
 function startBackgroundTimer() {
@@ -112,7 +187,7 @@ async function syncDefaultMonsters(isFirstLoad = false) {
                     allBosses.push({
                         id: maxId,
                         name: def.name,
-                        respawnHour: Number(def.respawnHour),
+                        respawnHour: def.respawnHour,
                         targetTime: null,
                         floatSec: 0,
                         respawnNotified: false,
@@ -211,7 +286,7 @@ function selectSort(type) {
     closeSortModal();
 }
 
-// [新增] 時間格式化工具 (小數轉時分)
+// 時間格式化工具 (小數轉時分)
 function formatRespawnTime(hours) {
     const h = Math.floor(hours);
     const m = Math.round((hours - h) * 60);
@@ -266,7 +341,6 @@ function renderSidebar() {
         
         const label = document.createElement('label');
         label.className = 'sidebar-label';
-        // [修改] 使用格式化函數
         label.innerHTML = `<span class="time-badge">(${formatRespawnTime(boss.respawnHour)})</span><span class="name-text">${boss.name}</span>`;
 
         div.appendChild(checkbox);
@@ -363,7 +437,6 @@ function createCardElement(boss) {
     card.dataset.id = boss.id;
     card.id = `card-${boss.id}`;
     
-    // [修改] 卡片標題時間也使用格式化函數
     card.innerHTML = `
         <span class="border-anim"></span>
         <span class="border-anim"></span>
@@ -669,7 +742,6 @@ function renderManageList() {
         item.draggable = true;
         item.dataset.index = index;
         
-        // [修改] 管理清單也顯示格式化後的時間
         item.innerHTML = `
             <div class="manage-left">
                 <input type="checkbox" class="sidebar-visibility-chk" 
@@ -717,6 +789,7 @@ function exportData() {
     a.click();
 }
 
+// [修改] 匯入合併邏輯：名稱相同更新時間
 function importData(input) {
     const file = input.files[0];
     if (!file) return;
@@ -734,11 +807,13 @@ function importData(input) {
                 if (item.name && item.respawnHour !== undefined) {
                     const existing = allBosses.find(b => b.name === item.name);
                     if (existing) {
+                        // 更新
                         if (existing.respawnHour !== Number(item.respawnHour)) {
                             existing.respawnHour = Number(item.respawnHour);
                             updatedCount++;
                         }
                     } else {
+                        // 新增
                         maxId++;
                         allBosses.push({
                             id: maxId,
