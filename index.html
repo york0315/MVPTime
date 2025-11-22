@@ -67,17 +67,10 @@
             overflow: visible;
         }
 
-        /* [修改] 側邊欄開關按鈕位置調整 */
         .sidebar-toggle-tab {
             position: absolute;
-            /* 移除原本的垂直置中設定 */
-            /* top: 50%; */
-            /* transform: translateY(-50%); */
-            
-            /* 改為靠下方對齊 */
-            top: auto; 
-            bottom: 20px; /* 距離底部 20px */
-            
+            top: auto;
+            bottom: 20px;
             left: 100%;
             width: 24px;
             height: 80px;
@@ -131,8 +124,12 @@
         }
         .notify-row { display: flex; align-items: center; justify-content: space-between; }
         .notify-row label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        /* 禁用狀態樣式 */
+        .notify-row label.disabled { color: var(--text-muted); opacity: 0.6; cursor: not-allowed; }
+        
         .notify-input-group { display: flex; align-items: center; gap: 5px; }
         .notify-input-group input[type="number"] { width: 40px; padding: 2px; text-align: center; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 3px; }
+        .notify-input-group input[type="number"]:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .sidebar-controls {
             padding: 10px;
@@ -322,21 +319,24 @@
         </div>
 
         <div class="sidebar-notify-settings">
+            <!-- [修改] 浮動時間改為 Checkbox 勾選 -->
             <div class="notify-row">
-                <label>浮動時間</label>
+                <label><input type="checkbox" id="chk-use-float" onchange="saveSettings(); renderGrid();"> 浮動時間</label>
                 <div class="notify-input-group">
-                    <input type="number" id="inp-float-min" value="10" min="0" max="60" onchange="saveSettings()">
+                    <input type="number" id="inp-float-min" value="10" min="0" max="60" onchange="saveSettings(); renderGrid();">
                     <span>分</span>
                 </div>
             </div>
+            <!-- [修改] 重生通知事件：連動關閉倒數通知 -->
             <div class="notify-row">
-                <label><input type="checkbox" id="chk-notify-respawn" onchange="saveSettings()"> 重生通知</label>
+                <label><input type="checkbox" id="chk-notify-respawn" onchange="toggleRespawnSettings()"> 重生通知</label>
             </div>
             <div class="notify-row">
-                <label><input type="checkbox" id="chk-notify-countdown" onchange="saveSettings()"> 倒數通知</label>
+                <!-- [修改] 移除 "前" 字 -->
+                <label id="lbl-notify-countdown"><input type="checkbox" id="chk-notify-countdown" onchange="saveSettings()"> 倒數通知</label>
                 <div class="notify-input-group">
-                    <input type="number" id="inp-notify-min" value="10" min="1" max="60" onchange="saveSettings()">
-                    <span>分前</span>
+                    <input type="number" id="inp-notify-min" value="3" min="1" max="60" onchange="saveSettings()">
+                    <span>分</span>
                 </div>
             </div>
         </div>
@@ -408,8 +408,9 @@
         let settings = { 
             notifyRespawn: false, 
             notifyCountdown: false, 
-            notifyMin: 10,
-            floatMin: 10, 
+            notifyMin: 3,
+            floatMin: 9,
+            useFloating: true, // [新增] 浮動時間開關
             lightMode: true 
         };
         let currentTopBossId = null; 
@@ -486,16 +487,48 @@
             document.getElementById('chk-notify-respawn').checked = settings.notifyRespawn;
             document.getElementById('chk-notify-countdown').checked = settings.notifyCountdown;
             document.getElementById('inp-notify-min').value = settings.notifyMin;
-            document.getElementById('inp-float-min').value = settings.floatMin || 10; 
+            document.getElementById('inp-float-min').value = settings.floatMin;
+            document.getElementById('chk-use-float').checked = settings.useFloating !== false; // 預設為 true
             document.getElementById('chk-theme').checked = settings.lightMode;
+            
+            toggleRespawnSettings(); // 初始化狀態
             applyTheme();
+        }
+
+        // [新增] 連動控制邏輯
+        function toggleRespawnSettings() {
+            const respawnChk = document.getElementById('chk-notify-respawn');
+            const countdownChk = document.getElementById('chk-notify-countdown');
+            const countdownInput = document.getElementById('inp-notify-min');
+            const countdownLabel = document.getElementById('lbl-notify-countdown');
+
+            settings.notifyRespawn = respawnChk.checked;
+
+            if (!settings.notifyRespawn) {
+                // 如果重生通知關閉，倒數通知也強制關閉並禁用
+                settings.notifyCountdown = false;
+                countdownChk.checked = false;
+                countdownChk.disabled = true;
+                countdownInput.disabled = true;
+                countdownLabel.classList.add('disabled');
+            } else {
+                // 否則啟用
+                countdownChk.disabled = false;
+                countdownInput.disabled = false;
+                countdownLabel.classList.remove('disabled');
+                // 讀取當下勾選狀態
+                settings.notifyCountdown = countdownChk.checked;
+            }
+            saveSettings();
         }
 
         function saveSettings() {
             settings.notifyRespawn = document.getElementById('chk-notify-respawn').checked;
             settings.notifyCountdown = document.getElementById('chk-notify-countdown').checked;
-            settings.notifyMin = parseInt(document.getElementById('inp-notify-min').value) || 10;
-            settings.floatMin = parseInt(document.getElementById('inp-float-min').value) || 0; 
+            settings.notifyMin = parseInt(document.getElementById('inp-notify-min').value) || 3;
+            settings.floatMin = parseInt(document.getElementById('inp-float-min').value) || 0;
+            settings.useFloating = document.getElementById('chk-use-float').checked;
+            
             localStorage.setItem('ro_boss_settings', JSON.stringify(settings));
         }
 
@@ -759,11 +792,16 @@
                 const s = Math.floor((diff % 60000) / 1000);
                 const countDownStr = `${pad(h)}:${pad(m)}:${pad(s)}`;
                 
-                const floatMinStr = Math.floor(boss.floatSec / 60);
-                const floatSecStr = boss.floatSec % 60;
-                const floatStr = `+ ${pad(floatMinStr)}:${pad(floatSecStr)}`;
+                // [修正] 依據勾選狀態顯示浮動時間
+                // 如果有勾選且 floatSec > 0，才顯示
+                let floatStr = "";
+                if (settings.useFloating && boss.floatSec > 0) {
+                    const floatMinStr = Math.floor(boss.floatSec / 60);
+                    const floatSecStr = boss.floatSec % 60;
+                    floatStr = ` + ${pad(floatMinStr)}:${pad(floatSecStr)}`;
+                }
                 
-                const fullTimerText = `${countDownStr} ${floatStr}`;
+                const fullTimerText = `${countDownStr}${floatStr}`;
                 
                 if (timerEl.innerText !== fullTimerText) {
                     timerEl.innerText = fullTimerText;
@@ -799,7 +837,8 @@
             const boss = allBosses.find(b => b.id === id);
             if (boss) {
                 boss.targetTime = Date.now() + (boss.respawnHour * 3600000);
-                boss.floatSec = settings.floatMin * 60; 
+                // [修正] 判斷是否使用浮動
+                boss.floatSec = settings.useFloating ? (settings.floatMin * 60) : 0; 
                 boss.respawnNotified = false; 
                 boss.lastCountdownMin = null;
                 saveData();
@@ -848,7 +887,8 @@
                             killTime.setDate(killTime.getDate() - 1);
                         }
                         boss.targetTime = killTime.getTime() + (boss.respawnHour * 3600000);
-                        boss.floatSec = settings.floatMin * 60;
+                        // [修正] 判斷是否使用浮動
+                        boss.floatSec = settings.useFloating ? (settings.floatMin * 60) : 0;
                     }
                 }
                 boss.respawnNotified = false; 
