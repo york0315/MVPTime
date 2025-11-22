@@ -44,9 +44,17 @@
 
         <div class="sidebar-content" id="sidebar-list"></div>
 
+        <!-- [修改] 搜尋與分享按鈕區 -->
         <div class="sidebar-search-area">
-            <input type="text" id="sidebar-search" class="sidebar-search" placeholder="🔍 搜尋魔物..." oninput="renderSidebar()">
-            <button class="btn-sort-trigger" onclick="openSortModal()">⇅</button>
+            <!-- 分享按鈕 -->
+            <button class="btn-share-link" onclick="generateShareLink()">
+                🔗 分享計時
+            </button>
+            <!-- 搜尋列 -->
+            <div class="search-row">
+                <input type="text" id="sidebar-search" class="sidebar-search" placeholder="🔍 搜尋魔物..." oninput="renderSidebar()">
+                <button class="btn-sort-trigger" onclick="openSortModal()">⇅</button>
+            </div>
         </div>
 
         <div class="sidebar-footer">
@@ -59,6 +67,7 @@
         <div id="card-container"></div>
     </div>
 
+    <!-- 設定視窗 -->
     <div id="settings-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -106,6 +115,7 @@
         </div>
     </div>
 
+    <!-- 排序選單視窗 -->
     <div id="sort-modal">
         <div class="modal-content" style="width: 300px;">
             <div class="modal-header">
