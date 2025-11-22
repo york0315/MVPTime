@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RO BOSS計時器 Pro</title>
     <style>
-        /* === CSS 變數定義 (預設淺色模式) === */
+        /* === CSS 變數定義 === */
         :root {
-            /* 淺色模式變數 (Default) */
             --bg-color: #f0f2f5;
             --sidebar-bg: #ffffff;
             --card-bg: #ffffff;
@@ -18,12 +17,12 @@
             --modal-bg: #fff;
             --hover-bg: #f5f5f5;
             
-            --accent-color: #4CAF50; /* 綠色 */
-            --danger-color: #f44336; /* 紅色 */
+            --accent-color: #4CAF50;
+            --danger-color: #f44336;
             --card-border-width: 3px;
+            --card-width: 320px; /* 卡片固定寬度 */
         }
 
-        /* 深色模式變數 */
         [data-theme="dark"] {
             --bg-color: #1e1e1e;
             --sidebar-bg: #252526;
@@ -47,22 +46,6 @@
             overflow: hidden;
             transition: background 0.3s, color 0.3s;
         }
-
-        /* === 漢堡選單按鈕 (控制側邊欄) === */
-        .menu-toggle-btn {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            z-index: 20; /* 在最上層 */
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            border-radius: 4px;
-            padding: 5px 10px;
-            font-size: 1.2em;
-            cursor: pointer;
-            display: none; /* 電腦版預設依賴 layout，但在 main-content 內顯示 */
-        }
         
         /* === 左側側邊欄 === */
         #sidebar {
@@ -73,7 +56,37 @@
             flex-direction: column;
             flex-shrink: 0;
             z-index: 30;
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, margin-left 0.3s ease;
+            position: relative; /* 讓按鈕可以定位在旁邊 */
+            overflow: visible;  /* 關鍵：讓凸出去的按鈕顯示出來 */
+        }
+
+        /* === [新增] 緊貼側邊欄的長條開關鈕 === */
+        .sidebar-toggle-tab {
+            position: absolute;
+            top: 50%;            /* 垂直置中 */
+            left: 100%;          /* 黏在側邊欄右邊緣 */
+            transform: translateY(-50%);
+            width: 24px;
+            height: 80px;        /* 長條狀 */
+            background-color: var(--sidebar-bg);
+            border: 1px solid var(--border-color);
+            border-left: none;   /* 移除左邊框讓視覺融合 */
+            border-radius: 0 8px 8px 0; /* 右側圓角 */
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-family: monospace;
+            box-shadow: 4px 0 6px rgba(0,0,0,0.05);
+            z-index: 40;
+            transition: background 0.2s;
+        }
+        .sidebar-toggle-tab:hover {
+            background-color: var(--hover-bg);
+            color: var(--accent-color);
         }
 
         /* 手機版遮罩 */
@@ -182,25 +195,19 @@
             position: relative;
         }
 
-        /* 頂部 Header (放置漢堡按鈕用) */
-        #main-header-bar {
-            height: 50px;
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            border-bottom: 1px solid var(--border-color);
-            background: var(--bg-color);
-        }
-
         #card-container {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            grid-auto-rows: max-content;
+            /* [修改] 卡片固定寬度邏輯 */
+            /* 原本是 minmax(300px, 1fr) 會自動拉寬 */
+            /* 現在改為固定 320px，瀏覽器會自動計算能放幾張 */
+            grid-template-columns: repeat(auto-fill, var(--card-width));
             gap: 20px;
             align-content: start;
+            /* 讓卡片群組置左，若要置中可改為 center */
+            justify-content: start; 
         }
 
         /* === 卡片樣式 === */
@@ -217,6 +224,8 @@
             transition: box-shadow 0.3s;
             overflow: hidden;
             will-change: transform;
+            /* 確保卡片不會因為 container 寬度變化而擠壓 */
+            width: var(--card-width); 
         }
 
         span.border-anim { position: absolute; display: none; }
@@ -258,9 +267,6 @@
         .modal-section { margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px; }
         .modal-section:last-child { border: none; margin-bottom: 0; padding-bottom: 0; }
         
-        /* 移除底部按鈕後，Footer 不再需要 */
-        /* .modal-footer { padding: 15px; border-top: 1px solid var(--border-color); text-align: right; } */
-
         .manage-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--input-bg); margin-bottom: 5px; border-radius: 4px; cursor: grab; transition: background 0.2s, transform 0.2s; }
         .manage-list-item:active { cursor: grabbing; }
         .manage-list-item.dragging { opacity: 0.5; background: var(--accent-color); border: 2px dashed #fff; }
@@ -269,71 +275,31 @@
         input[type="text"] { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; width: 100%; }
 
         /* === RWD 響應式設計 === */
-        /* 漢堡按鈕 */
-        .menu-btn {
-            font-size: 1.5em;
-            background: none;
-            border: none;
-            color: var(--text-color);
-            cursor: pointer;
-            padding: 5px;
-            margin-right: 10px;
-        }
-
-        /* 手機版模式 (< 768px) */
+        /* 手機版 (< 768px) */
         @media (max-width: 768px) {
             #sidebar {
                 position: fixed;
-                left: -280px; /* 預設隱藏在左側外 */
+                left: -280px; /* 隱藏 */
                 top: 0;
                 bottom: 0;
                 height: 100%;
                 box-shadow: 2px 0 10px rgba(0,0,0,0.5);
             }
             #sidebar.open {
-                transform: translateX(280px);
+                transform: translateX(280px); /* 滑出 */
             }
-            #main-header-bar {
-                display: flex; /* 手機版顯示頂部條 */
+            .sidebar-toggle-tab {
+                /* 手機版若左側隱藏，按鈕會在螢幕最左邊 */
+                /* 因為按鈕是 left: 100%，所以 left: -280px + 280px = 0 (剛好在邊緣) */
+                /* 我們直接讓它正常顯示即可，邏輯通用 */
             }
         }
         
-        /* 電腦版模式 (>= 768px) */
+        /* 電腦版 (>= 769px) */
         @media (min-width: 769px) {
-            #main-header-bar {
-                display: none; /* 電腦版隱藏頂部條，直接顯示卡片區 */
-            }
             #sidebar.hidden {
-                margin-left: -280px; /* 電腦版可收合 */
+                margin-left: -280px; /* 收合 */
             }
-            /* 電腦版還是需要一個按鈕來打開/收合 sidebar，我們把它放在 main-content 裡面的一個懸浮鈕，或者直接依賴 header */
-            /* 為了簡化，這裡我們讓電腦版預設開啟，如果需要收合功能，我們可以在左上角加一個固定按鈕 */
-            .desktop-toggle {
-                position: absolute;
-                top: 10px;
-                left: 10px;
-                z-index: 5;
-                display: block;
-            }
-            #sidebar.hidden + #main-content .desktop-toggle {
-                /* 當 Sidebar 隱藏時，顯示按鈕 */
-                display: block;
-            }
-        }
-        
-        /* 統一的 toggle 按鈕樣式 (懸浮在 main content 左上) */
-        .toggle-sidebar-btn {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 20;
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            border-radius: 4px;
-            padding: 5px 10px;
-            font-size: 1.2em;
-            cursor: pointer;
         }
 
     </style>
@@ -345,9 +311,14 @@
 
     <!-- 左側選單 -->
     <div id="sidebar">
+        
+        <!-- [新增] 緊貼側邊欄的長條開關鈕 -->
+        <div class="sidebar-toggle-tab" onclick="toggleSidebar()" id="toggle-btn">
+            &lt; <!-- 預設顯示 < (代表可收起) -->
+        </div>
+
         <div class="sidebar-header">
             <span>BOSS計時器</span>
-            <!-- 手機版側邊欄內的關閉鈕 (可選，但已有遮罩點擊) -->
             <button class="btn-icon" onclick="openSettings()" title="設定">⚙️</button>
         </div>
         
@@ -371,9 +342,6 @@
 
     <!-- 右側內容 -->
     <div id="main-content">
-        <!-- 側邊欄開關按鈕 (電腦手機通用) -->
-        <button class="toggle-sidebar-btn" onclick="toggleSidebar()">☰</button>
-
         <div id="card-container"></div>
     </div>
 
@@ -397,7 +365,6 @@
                     </label>
                 </div>
 
-                <!-- [修改] 資料管理移到這裡 (順序調整) -->
                 <div class="modal-section">
                     <h3>資料管理</h3>
                     <div style="display:flex; gap:10px;">
@@ -416,21 +383,17 @@
                     </div>
                 </div>
 
-                <!-- [修改] 管理清單 (取消獨立滾動條，隨頁面滾動) -->
                 <div class="modal-section">
                     <h3>管理與排序清單 (拖曳可調整順序)</h3>
-                    <!-- 移除 max-height 和 overflow-y，讓它隨 modal-body 滾動 -->
                     <div id="manage-list-container"></div>
                 </div>
             </div>
-            <!-- [修改] 移除底部 Footer 關閉鈕 -->
         </div>
     </div>
 
     <script>
         let allBosses = []; 
         let visibleIds = new Set(); 
-        // [修改] 預設 lightMode 為 true
         let settings = { notify: false, lightMode: true };
 
         async function init() {
@@ -442,27 +405,38 @@
             if (Notification.permission !== "granted" && Notification.permission !== "denied") {
                 Notification.requestPermission();
             }
+            updateToggleButtonIcon(); // 初始化按鈕符號
         }
 
-        // [新增] 切換側邊欄功能
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
             const isMobile = window.innerWidth <= 768;
 
             if (isMobile) {
-                // 手機版：切換 open class
                 sidebar.classList.toggle('open');
-                // 切換遮罩顯示
-                if (sidebar.classList.contains('open')) {
-                    overlay.style.display = 'block';
-                } else {
-                    overlay.style.display = 'none';
-                }
+                overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
             } else {
-                // 電腦版：切換 hidden class (利用 margin-left 隱藏)
                 sidebar.classList.toggle('hidden');
             }
+            
+            updateToggleButtonIcon();
+        }
+
+        function updateToggleButtonIcon() {
+            const sidebar = document.getElementById('sidebar');
+            const btn = document.getElementById('toggle-btn');
+            const isMobile = window.innerWidth <= 768;
+            
+            let isOpen = false;
+            if (isMobile) {
+                isOpen = sidebar.classList.contains('open');
+            } else {
+                isOpen = !sidebar.classList.contains('hidden');
+            }
+
+            // 如果開啟狀態，顯示 < (收起)，否則顯示 > (展開)
+            btn.innerHTML = isOpen ? '&lt;' : '&gt;';
         }
 
         async function loadData() {
@@ -491,7 +465,6 @@
             if (s) {
                 settings = JSON.parse(s);
             } else {
-                // 如果是第一次使用，強制設為淺色
                 settings.lightMode = true;
                 saveSettings();
             }
@@ -882,6 +855,9 @@
 
         function toggleTheme() { settings.lightMode = document.getElementById('chk-theme').checked; applyTheme(); saveSettings(); }
         function applyTheme() { if (settings.lightMode) document.documentElement.setAttribute('data-theme', 'light'); else document.documentElement.removeAttribute('data-theme'); }
+
+        // 視窗大小改變時，可能需要更新按鈕符號
+        window.addEventListener('resize', updateToggleButtonIcon);
 
         init();
     </script>
