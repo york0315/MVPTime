@@ -249,13 +249,31 @@
         }
         .btn-kill-header:hover { background-color: #d32f2f; }
 
+        /* [修改] 計時器容器：置中 */
         .timer-group {
-            display: flex; flexDirection: row; alignItems: center; justifyContent: center;
-            background: var(--timer-bg); padding: 5px; border-radius: 5px; margin: 2px 0;
-            z-index: 2; position: relative; min-height: 45px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center; /* 內容置中 */
+            background: var(--timer-bg);
+            padding: 5px; 
+            border-radius: 5px;
+            margin: 2px 0;
+            z-index: 2;
+            position: relative;
+            min-height: 45px;
         }
 
-        .timer-display { font-size: 1.8em; font-family: monospace; font-weight: bold; color: var(--timer-color); margin: 0; line-height: 1; }
+        /* [修改] 計時器字體大小與字元間距 */
+        .timer-display { 
+            font-size: 1.7em; /* 稍微縮小以容納更長字串 */
+            font-family: monospace; 
+            font-weight: bold; 
+            color: var(--timer-color);
+            margin: 0;
+            line-height: 1;
+            letter-spacing: -0.5px; /* 稍微擠一點點 */
+        }
         
         .correction-area { 
             background-color: var(--input-bg); padding: 5px; border-radius: 5px; 
@@ -440,7 +458,10 @@
                     const response = await fetch('monsters.json');
                     if (response.ok) {
                         allBosses = await response.json();
-                        allBosses = allBosses.map(b => ({...b, targetTime: null, respawnNotified: false}));
+                        // [修改] 初始化 floatSec
+                        allBosses = allBosses.map(b => ({
+                            ...b, targetTime: null, respawnNotified: false, floatSec: 0
+                        }));
                         saveData();
                     }
                 } catch (e) { allBosses = []; }
@@ -658,8 +679,7 @@
                     } 
                     else if (diff > 0 && settings.notifyCountdown) {
                         const remainingMin = Math.floor(diff / 60000);
-                        // [修正] 邏輯: 3分59秒算4分，所以當 floor(diff/60000) == settings.notifyMin - 1 時，就是進入 X 分鐘
-                        // 例如: 設定 3 分鐘。 當時間變為 2:59， floor 是 2。 2 == 3-1。 觸發。
+                        // [修正] 3分59秒=4分，所以倒數到 2:59 時，代表還有 3 分鐘
                         if (remainingMin === (settings.notifyMin - 1) && boss.lastCountdownMin !== remainingMin) {
                             sendCountdownNotification(boss.name, settings.notifyMin);
                             boss.lastCountdownMin = remainingMin;
@@ -723,8 +743,13 @@
                 const s = Math.floor((diff % 60000) / 1000);
                 const countDownStr = `${pad(h)}:${pad(m)}:${pad(s)}`;
                 
-                if (timerEl.innerText !== countDownStr) {
-                    timerEl.innerText = countDownStr;
+                // [修正] 顯示浮動時間
+                const floatStr = boss.floatSec === 600 ? "+ 10:00" : "+ 00:00";
+                
+                const fullTimerText = `${countDownStr} ${floatStr}`;
+                
+                if (timerEl.innerText !== fullTimerText) {
+                    timerEl.innerText = fullTimerText;
                     timerEl.style.color = "var(--timer-color)"; 
                 }
                 if (!card.classList.contains('active')) {
@@ -738,7 +763,6 @@
 
         function sendNotification(bossName) {
             if (settings.notifyRespawn && Notification.permission === "granted") {
-                // [修正] 重生通知要 sticky (requireInteraction)
                 const n = new Notification("BOSS重生提醒", { 
                     body: `${bossName} 已經重生了！`, 
                     icon: "",
@@ -750,7 +774,6 @@
         function sendCountdownNotification(bossName, min) {
             if (Notification.permission === "granted") {
                 const n = new Notification("BOSS倒數提醒", { body: `${bossName} 將在 ${min} 分鐘後重生` });
-                // [修正] 3秒後自動關閉
                 setTimeout(() => n.close(), 3000);
             }
         }
@@ -758,8 +781,9 @@
         function killBoss(id) {
             const boss = allBosses.find(b => b.id === id);
             if (boss) {
-                // [修正] 擊殺: +10分鐘浮動
-                boss.targetTime = Date.now() + (boss.respawnHour * 3600000) + 600000;
+                // [修正] 目標時間 = 擊殺時間 + 重生CD (不加10分鐘)
+                boss.targetTime = Date.now() + (boss.respawnHour * 3600000);
+                boss.floatSec = 600; // 浮動顯示
                 boss.respawnNotified = false; 
                 boss.lastCountdownMin = null;
                 saveData();
@@ -771,6 +795,7 @@
             const boss = allBosses.find(b => b.id === id);
             if (boss) {
                 boss.targetTime = null;
+                boss.floatSec = 0;
                 boss.respawnNotified = false;
                 boss.lastCountdownMin = null;
                 saveData();
@@ -795,17 +820,19 @@
                     boss.targetTime = null;
                 } else {
                     if (mode === 'remaining') {
-                        // [修正] 剩餘: 浮動0 (精確)
-                        boss.targetTime = Date.now() + (h * 3600000) + (m * 60000);
+                        // [修正] 剩餘: +1分鐘補償，浮動0
+                        boss.targetTime = Date.now() + (h * 3600000) + (m * 60000) + 60000;
+                        boss.floatSec = 0;
                     } else {
-                        // [修正] 擊殺: +10分鐘浮動
+                        // [修正] 擊殺: 指定時間 + 重生CD，浮動10分
                         const now = new Date();
                         let killTime = new Date();
                         killTime.setHours(h, m, 0, 0);
                         if (killTime > now) {
                             killTime.setDate(killTime.getDate() - 1);
                         }
-                        boss.targetTime = killTime.getTime() + (boss.respawnHour * 3600000) + 600000;
+                        boss.targetTime = killTime.getTime() + (boss.respawnHour * 3600000);
+                        boss.floatSec = 600;
                     }
                 }
                 boss.respawnNotified = false; 
@@ -847,7 +874,7 @@
             const totalHours = hour + (min / 60);
 
             const newId = allBosses.length > 0 ? Math.max(...allBosses.map(b => b.id)) + 1 : 1;
-            allBosses.push({ id: newId, name: name, respawnHour: totalHours, targetTime: null });
+            allBosses.push({ id: newId, name: name, respawnHour: totalHours, targetTime: null, floatSec: 0 });
             visibleIds.add(newId);
             saveData();
             localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
