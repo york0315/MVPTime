@@ -6,9 +6,8 @@
     <title>MVP儀表板</title>
     <style>
         /* === CSS 變數定義 === */
-        
-        /* 1. 預設 (淺色模式 Light Mode) - 定義在 :root */
         :root {
+            /* 淺色模式 (Light Mode) */
             --bg-color: #f0f2f5;
             --sidebar-bg: #ffffff;
             --card-bg: #ffffff;
@@ -27,8 +26,8 @@
             --card-width: 320px; 
         }
 
-        /* 2. 深色模式 (Dark Mode) - 使用更高權重的選擇器 html[data-theme="dark"] */
-        html[data-theme="dark"] {
+        /* 深色模式 (Dark Mode) */
+        [data-theme="dark"] {
             --bg-color: #1e1e1e;
             --sidebar-bg: #252526;
             --card-bg: #2d2d2d;
@@ -72,7 +71,7 @@
         .sidebar-toggle-tab {
             position: absolute;
             top: auto;
-            bottom: 0; /* 緊貼底部 */
+            bottom: 0;
             left: 100%;
             width: 24px;
             height: 80px;
@@ -207,7 +206,9 @@
         .btn-gray:hover { background-color: #555; }
         .btn-icon { background: transparent; color: var(--text-color); font-size: 1.2em; padding: 5px; }
         .btn-icon:hover { background-color: var(--hover-bg); }
-        .btn-import { background-color: #FF9800; flex: 1; margin-right: 5px; }
+        
+        .btn-import { background-color: #FF9800; flex: 1; }
+        .btn-sync { background-color: #2196F3; flex: 1; } /* 藍色 */
 
         /* === 右側主內容 === */
         #main-content {
@@ -268,31 +269,14 @@
         }
         .btn-kill-header:hover { background-color: #d32f2f; }
 
-        /* 計時器區塊 */
         .timer-group {
-            display: flex; 
-            flex-direction: row; 
-            align-items: center; 
-            justify-content: center; /* 置中 */
-            background: var(--timer-bg); 
-            padding: 5px; 
-            border-radius: 5px; 
-            margin: 2px 0;
-            z-index: 2; 
-            position: relative; 
-            min-height: 45px;
+            display: flex; flexDirection: row; alignItems: center; justifyContent: center;
+            background: var(--timer-bg); padding: 5px; border-radius: 5px; margin: 2px 0;
+            z-index: 2; position: relative; min-height: 45px;
         }
 
         .timer-display { 
-            font-size: 1.7em; 
-            font-family: monospace; 
-            font-weight: bold; 
-            color: var(--timer-color);
-            margin: 0;
-            line-height: 1;
-            letter-spacing: -0.5px; 
-            text-align: center; 
-            width: 100%; 
+            font-size: 1.7em; font-family: monospace; font-weight: bold; color: var(--timer-color); margin: 0; line-height: 1; letter-spacing: -0.5px; text-align: center; width: 100%; 
         }
         
         .correction-area { 
@@ -316,11 +300,22 @@
         .modal-section { margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px; }
         .modal-section:last-child { border: none; margin-bottom: 0; padding-bottom: 0; }
         
+        /* [修改] 管理清單樣式 */
         .manage-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--input-bg); margin-bottom: 5px; border-radius: 4px; cursor: grab; transition: background 0.2s, transform 0.2s; }
         .manage-list-item:active { cursor: grabbing; }
         .manage-list-item.dragging { opacity: 0.5; background: var(--accent-color); border: 2px dashed #fff; }
         .manage-list-item.drag-over { border-bottom: 3px solid var(--accent-color); }
-        .manage-controls button { font-size: 0.8em; padding: 4px 8px; }
+        
+        .manage-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+        /* 側邊欄開關 Checkbox */
+        .sidebar-visibility-chk { transform: scale(1.2); cursor: pointer; }
+
+        .manage-controls button { font-size: 0.8em; padding: 4px 8px; cursor: pointer; }
         input[type="text"] { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; width: 100%; }
 
         /* 排序選單樣式 */
@@ -358,7 +353,6 @@
 
         <div class="sidebar-notify-settings">
             <div class="notify-row">
-                <!-- 浮動時間 Checkbox -->
                 <label><input type="checkbox" id="chk-use-float" onchange="saveSettings(); renderGrid();"> 浮動時間</label>
                 <div class="notify-input-group">
                     <input type="number" id="inp-float-min" value="10" min="0" max="60" onchange="saveSettings(); renderGrid();">
@@ -369,7 +363,6 @@
                 <label><input type="checkbox" id="chk-notify-respawn" onchange="toggleRespawnSettings()"> 重生通知</label>
             </div>
             <div class="notify-row">
-                <!-- 倒數通知文字修正 -->
                 <label id="lbl-notify-countdown"><input type="checkbox" id="chk-notify-countdown" onchange="saveSettings()"> 倒數通知</label>
                 <div class="notify-input-group">
                     <input type="number" id="inp-notify-min" value="3" min="1" max="60" onchange="saveSettings()">
@@ -412,10 +405,14 @@
                 </div>
                 <div class="modal-section">
                     <h3>資料管理</h3>
-                    <div style="display:flex; gap:10px;">
+                    <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                        <button class="btn-sync" onclick="syncDefaultMonsters()">同步官方/預設魔物</button>
                         <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
-                        <button class="btn-import" onclick="document.getElementById('import-file').click()">匯入清單 (.json)</button>
-                        <button class="btn-gray" onclick="exportData()">匯出清單 (.json)</button>
+                        <button class="btn-import" onclick="document.getElementById('import-file').click()">匯入備份</button>
+                        <button class="btn-gray" onclick="exportData()">匯出備份</button>
+                    </div>
+                    <div style="font-size:0.8em; color:var(--text-muted); margin-top:5px;">
+                        * 同步：補齊缺少的預設魔物 (不影響現有資料)。
                     </div>
                 </div>
                 <div class="modal-section">
@@ -429,13 +426,16 @@
                 </div>
                 <div class="modal-section">
                     <h3>管理與排序清單</h3>
+                    <div style="font-size:0.85em; color:var(--text-muted); margin-bottom:5px;">
+                        勾選框：決定是否顯示於「側邊欄」。
+                    </div>
                     <div id="manage-list-container"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 排序選單 -->
+    <!-- 排序選單視窗 -->
     <div id="sort-modal">
         <div class="modal-content" style="width: 300px;">
             <div class="modal-header">
@@ -507,21 +507,60 @@
             const localList = localStorage.getItem('ro_boss_list');
             if (localList) {
                 allBosses = JSON.parse(localList);
+                // [修改] 初始化 onSidebar 屬性 (向下相容)
+                allBosses.forEach(b => {
+                    if (typeof b.onSidebar === 'undefined') b.onSidebar = true;
+                });
             } else {
-                try {
-                    const response = await fetch('monsters.json');
-                    if (response.ok) {
-                        allBosses = await response.json();
-                        allBosses = allBosses.map(b => ({
-                            ...b, targetTime: null, respawnNotified: false, floatSec: 0
-                        }));
-                        saveData();
-                    }
-                } catch (e) { allBosses = []; }
+                await syncDefaultMonsters(true);
             }
             const savedVis = localStorage.getItem('ro_boss_visible_ids');
             if (savedVis) visibleIds = new Set(JSON.parse(savedVis));
             else allBosses.forEach(b => visibleIds.add(b.id));
+        }
+
+        async function syncDefaultMonsters(isFirstLoad = false) {
+            try {
+                const response = await fetch('monsters.json?t=' + new Date().getTime());
+                if (response.ok) {
+                    const defaultData = await response.json();
+                    let addedCount = 0;
+                    let maxId = allBosses.length > 0 ? Math.max(...allBosses.map(b => b.id)) : 0;
+
+                    defaultData.forEach(def => {
+                        if (!allBosses.some(b => b.name === def.name)) {
+                            maxId++;
+                            allBosses.push({
+                                id: maxId,
+                                name: def.name,
+                                respawnHour: def.respawnHour,
+                                targetTime: null,
+                                floatSec: 0,
+                                respawnNotified: false,
+                                onSidebar: true // 預設加入側邊欄
+                            });
+                            visibleIds.add(maxId);
+                            addedCount++;
+                        }
+                    });
+
+                    if (addedCount > 0 || isFirstLoad) {
+                        saveData();
+                        localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
+                        if (!isFirstLoad) {
+                            renderSidebar();
+                            renderGrid();
+                            renderManageList();
+                            alert(`同步完成！新增了 ${addedCount} 隻魔物。`);
+                        }
+                    } else if (!isFirstLoad) {
+                        alert("目前已是最新資料，無需更新。");
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                if (!isFirstLoad) alert("無法讀取預設資料 (monsters.json)");
+            }
         }
 
         function saveData() { localStorage.setItem('ro_boss_list', JSON.stringify(allBosses)); }
@@ -598,7 +637,9 @@
             const searchText = searchInput ? searchInput.value.toLowerCase() : "";
 
             list.innerHTML = '';
-            let displayList = [...allBosses];
+            
+            // [修改] 過濾 onSidebar === true 的魔物才顯示在側邊欄
+            let displayList = allBosses.filter(b => b.onSidebar !== false); 
 
             if (searchText) {
                 displayList = displayList.filter(b => b.name.toLowerCase().includes(searchText));
@@ -650,7 +691,12 @@
         }
 
         function toggleAll(state) {
-            allBosses.forEach(b => state ? visibleIds.add(b.id) : visibleIds.delete(b.id));
+            // [修改] 全選/全取消只影響「側邊欄有顯示的 (onSidebar=true)」
+            allBosses.forEach(b => {
+                if (b.onSidebar !== false) {
+                    state ? visibleIds.add(b.id) : visibleIds.delete(b.id);
+                }
+            });
             localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
             renderSidebar();
             renderGrid();
@@ -679,7 +725,8 @@
             container.querySelectorAll('.boss-card').forEach(c => existingCards[c.dataset.id] = c);
 
             sortedList.forEach(boss => {
-                if (!visibleIds.has(boss.id)) {
+                // 必須同時：在可見清單中 AND 允許在側邊欄顯示 (作為雙重驗證)
+                if (!visibleIds.has(boss.id) || boss.onSidebar === false) {
                     if (existingCards[boss.id]) existingCards[boss.id].remove();
                     return;
                 }
@@ -983,7 +1030,7 @@
             const totalHours = hour + (min / 60);
 
             const newId = allBosses.length > 0 ? Math.max(...allBosses.map(b => b.id)) + 1 : 1;
-            allBosses.push({ id: newId, name: name, respawnHour: totalHours, targetTime: null, floatSec: 0 });
+            allBosses.push({ id: newId, name: name, respawnHour: totalHours, targetTime: null, floatSec: 0, onSidebar: true });
             visibleIds.add(newId);
             saveData();
             localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
@@ -1008,7 +1055,22 @@
             }
         }
 
-        let dragSrcIndex = null;
+        // [新增] 切換 Sidebar 顯示狀態
+        function toggleBossInSidebar(index) {
+            allBosses[index].onSidebar = !allBosses[index].onSidebar;
+            
+            // 如果隱藏了，也要從可見卡片中移除 (防呆)
+            if (!allBosses[index].onSidebar) {
+                visibleIds.delete(allBosses[index].id);
+                localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
+            }
+            
+            saveData();
+            renderManageList(); // 重新渲染管理清單
+            renderSidebar();    // 重新渲染側邊欄
+            renderGrid();       // 重新渲染卡片區
+        }
+
         function renderManageList() {
             const div = document.getElementById('manage-list-container');
             div.innerHTML = '';
@@ -1017,7 +1079,21 @@
                 item.className = 'manage-list-item';
                 item.draggable = true;
                 item.dataset.index = index;
-                item.innerHTML = `<span>${boss.name}</span><div class="manage-controls"><button onclick="deleteMonster(${index})" style="background:#f44336;">✕</button></div>`;
+                
+                // [修改] 增加顯示開關 Checkbox
+                item.innerHTML = `
+                    <div class="manage-left">
+                        <input type="checkbox" class="sidebar-visibility-chk" 
+                               ${boss.onSidebar !== false ? 'checked' : ''} 
+                               onclick="toggleBossInSidebar(${index})" title="顯示於側邊欄">
+                        <span>${boss.name}</span>
+                    </div>
+                    <div class="manage-controls">
+                        <button onclick="deleteMonster(${index})" style="background:#f44336;">✕</button>
+                    </div>
+                `;
+                
+                // 拖曳事件 (同前)
                 item.addEventListener('dragstart', handleDragStart);
                 item.addEventListener('dragover', handleDragOver);
                 item.addEventListener('drop', handleDrop);
@@ -1025,6 +1101,8 @@
                 div.appendChild(item);
             });
         }
+
+        let dragSrcIndex = null;
         function handleDragStart(e) { this.classList.add('dragging'); dragSrcIndex = Number(this.dataset.index); e.dataTransfer.effectAllowed = 'move'; }
         function handleDragOver(e) { if (e.preventDefault) e.preventDefault(); this.classList.add('drag-over'); e.dataTransfer.dropEffect = 'move'; return false; }
         function handleDrop(e) {
@@ -1051,6 +1129,7 @@
             a.click();
         }
 
+        // [修改] 匯入功能 - 合併模式 (Merge)
         function importData(input) {
             const file = input.files[0];
             if (!file) return;
@@ -1059,20 +1138,35 @@
                 try {
                     const json = JSON.parse(e.target.result);
                     if (!Array.isArray(json)) throw new Error("檔案格式錯誤");
-                    json.forEach((item, idx) => {
-                        if (!item.hasOwnProperty('id') || !item.hasOwnProperty('name') || !item.hasOwnProperty('respawnHour')) {
-                            throw new Error(`第 ${idx + 1} 筆資料錯誤`);
+                    
+                    let addedCount = 0;
+                    let maxId = allBosses.length > 0 ? Math.max(...allBosses.map(b => b.id)) : 0;
+
+                    json.forEach((item) => {
+                        if (item.name && item.respawnHour !== undefined) {
+                            if (!allBosses.some(b => b.name === item.name)) {
+                                maxId++;
+                                allBosses.push({
+                                    id: maxId,
+                                    name: item.name,
+                                    respawnHour: Number(item.respawnHour),
+                                    targetTime: null, 
+                                    floatSec: 0,
+                                    onSidebar: true
+                                });
+                                visibleIds.add(maxId);
+                                addedCount++;
+                            }
                         }
                     });
-                    if (confirm(`成功讀取 ${json.length} 筆資料。是否覆蓋？`)) {
-                        allBosses = json.map(b => ({ id: Number(b.id), name: String(b.name), respawnHour: Number(b.respawnHour), targetTime: null }));
-                        allBosses.forEach(b => visibleIds.add(b.id));
+
+                    if (confirm(`成功讀取檔案，將合併 ${addedCount} 筆新魔物資料。`)) {
                         saveData();
                         localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
                         renderSidebar();
                         renderGrid();
                         renderManageList();
-                        alert("匯入成功！");
+                        alert("匯入合併成功！");
                     }
                 } catch (err) { alert("匯入失敗：" + err.message); } finally { input.value = ''; }
             };
@@ -1080,14 +1174,7 @@
         }
 
         function toggleTheme() { settings.lightMode = document.getElementById('chk-theme').checked; applyTheme(); saveSettings(); }
-        
-        function applyTheme() { 
-            if (settings.lightMode) {
-                document.documentElement.removeAttribute('data-theme');
-            } else {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            }
-        }
+        function applyTheme() { if (settings.lightMode) document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', 'dark'); }
 
         window.addEventListener('resize', updateToggleButtonIcon);
 
