@@ -1,5 +1,6 @@
 /* === CSS 變數定義 === */
 :root {
+    /* 淺色模式 (Light Mode) */
     --bg-color: #f0f2f5;
     --sidebar-bg: #ffffff;
     --card-bg: #ffffff;
@@ -15,12 +16,13 @@
     --accent-color: #4CAF50;
     --danger-color: #f44336;
     --info-color: #2196F3;
-    --share-color: #9C27B0; /* [新增] 分享按鈕紫色 */
+    --share-color: #9C27B0;
     --card-border-width: 3px;
     --card-width: 320px; 
 }
 
-[data-theme="dark"] {
+/* 深色模式 (Dark Mode) */
+html[data-theme="dark"] {
     --bg-color: #1e1e1e;
     --sidebar-bg: #252526;
     --card-bg: #2d2d2d;
@@ -125,26 +127,26 @@ body {
 .notify-input-group input[type="number"] { width: 40px; padding: 2px; text-align: center; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 3px; }
 .notify-input-group input[type="number"]:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* [修改] 搜尋與分享區塊 (改為垂直排列) */
+/* [修改] 側邊欄功能區 (垂直排列) */
 .sidebar-search-area {
     padding: 10px;
     border-top: 1px solid var(--border-color);
     background-color: var(--sidebar-bg);
     display: flex;
-    flex-direction: column; /* 垂直排列 */
+    flex-direction: column; /* 垂直排列：分享鈕在上，搜尋列在下 */
     gap: 8px;
     flex-shrink: 0;
 }
 
-/* [新增] 搜尋列容器 (橫向排列搜尋框與排序鈕) */
+/* [新增] 搜尋與排序的橫向容器 */
 .search-row {
     display: flex;
-    gap: 8px;
+    gap: 5px;
     width: 100%;
 }
 
 .sidebar-search {
-    flex: 1;
+    flex: 1; /* 佔滿剩餘空間 */
     padding: 8px;
     background: var(--input-bg);
     border: 1px solid var(--border-color);
@@ -153,8 +155,8 @@ body {
 }
 
 .btn-sort-trigger {
-    width: 40px;
-    height: 36px;
+    width: 40px; /* 固定寬度 */
+    height: 36px; /* 與輸入框等高 */
     background: var(--input-bg);
     border: 1px solid var(--border-color);
     color: var(--text-color);
@@ -164,10 +166,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 .btn-sort-trigger:hover { background: var(--hover-bg); }
 
-/* [新增] 分享按鈕樣式 */
 .btn-share-link {
     width: 100%;
     background-color: var(--share-color);
@@ -263,11 +265,15 @@ button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; f
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    /* [修正] 改為靠上排列 (消除多餘空白) */
+    justify-content: flex-start; 
+    /* [修正] 統一間距 */
+    gap: 8px; 
     position: relative;
     transition: box-shadow 0.3s;
     will-change: transform;
     width: var(--card-width); 
+    /* [修正] 移除最小高度限制，讓內容決定高度 */
     min-height: auto; 
     height: auto;
     overflow: hidden;
@@ -293,7 +299,7 @@ span.border-anim {
 .boss-card.active { border-color: transparent !important; }
 .boss-card.expired { border-color: var(--danger-color) !important; box-shadow: 0 0 10px rgba(244, 67, 54, 0.4); }
 
-.card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 5px; position: relative; z-index: 2; }
+.card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 0; position: relative; z-index: 2; }
 .header-left { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; flex: 1; }
 .boss-duration { font-size: 0.9em; color: var(--accent-color); font-weight: bold; font-family: monospace; }
 .boss-name { font-size: 1.3em; font-weight: bold; }
@@ -310,9 +316,9 @@ span.border-anim {
     align-items: center; 
     justify-content: center; 
     background: var(--timer-bg); 
-    padding: 12px 5px; 
+    padding: 10px 5px; 
     border-radius: 5px; 
-    margin: 2px 0;
+    margin: 0; /* 移除上下 margin */
     z-index: 2; 
     position: relative; 
 }
@@ -333,7 +339,9 @@ span.border-anim {
 .correction-area { 
     background-color: var(--input-bg); padding: 5px; border-radius: 5px; 
     display: flex; align-items: center; gap: 5px; 
-    z-index: 2; position: relative; margin-top: auto;
+    z-index: 2; position: relative; 
+    /* [修正] 移除 auto margin，讓它自然堆疊 */
+    margin-top: 0; 
 }
 
 .mode-select { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; font-size: 0.8em; cursor: pointer; }
