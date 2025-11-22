@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MVP儀表板</title>
+    <!-- PWA 設定 -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <style>
         /* === CSS 變數定義 === */
         :root {
@@ -47,7 +52,9 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
+            /* [修正] 使用 dvh 解決手機網址列遮擋問題，fallback 為 vh */
             height: 100vh;
+            height: 100dvh; 
             display: flex;
             overflow: hidden;
             transition: background 0.3s, color 0.3s;
@@ -149,6 +156,8 @@
             flex: 1;
             overflow-y: auto;
             padding: 10px;
+            /* iOS 滾動優化 */
+            -webkit-overflow-scrolling: touch; 
         }
 
         .monster-check-item {
@@ -203,6 +212,10 @@
             gap: 20px;
             align-content: start;
             justify-content: start; 
+            /* [修正] iOS 滾動順暢度與底部留白 */
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 100px; /* 加大底部留白，防止被遮擋 */
+            scroll-behavior: smooth; /* 平滑滾動 */
         }
 
         /* === 卡片樣式 === */
@@ -249,30 +262,14 @@
         }
         .btn-kill-header:hover { background-color: #d32f2f; }
 
-        /* [修改] 計時器容器：置中 */
         .timer-group {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center; /* 內容置中 */
-            background: var(--timer-bg);
-            padding: 5px; 
-            border-radius: 5px;
-            margin: 2px 0;
-            z-index: 2;
-            position: relative;
-            min-height: 45px;
+            display: flex; flexDirection: row; alignItems: center; justifyContent: center;
+            background: var(--timer-bg); padding: 5px; border-radius: 5px; margin: 2px 0;
+            z-index: 2; position: relative; min-height: 45px;
         }
 
-        /* [修改] 計時器字體大小與字元間距 */
         .timer-display { 
-            font-size: 1.7em; /* 稍微縮小以容納更長字串 */
-            font-family: monospace; 
-            font-weight: bold; 
-            color: var(--timer-color);
-            margin: 0;
-            line-height: 1;
-            letter-spacing: -0.5px; /* 稍微擠一點點 */
+            font-size: 1.7em; font-family: monospace; font-weight: bold; color: var(--timer-color); margin: 0; line-height: 1; letter-spacing: -0.5px;
         }
         
         .correction-area { 
@@ -292,7 +289,7 @@
         #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: var(--modal-bg); width: 500px; max-width: 95%; max-height: 90vh; border-radius: 8px; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         .modal-header { padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; display: flex; justify-content: space-between; }
-        .modal-body { padding: 20px; overflow-y: auto; }
+        .modal-body { padding: 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .modal-section { margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px; }
         .modal-section:last-child { border: none; margin-bottom: 0; padding-bottom: 0; }
         
@@ -309,7 +306,13 @@
                 position: fixed; left: -280px; top: 0; bottom: 0; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.5);
             }
             #sidebar.open { transform: translateX(280px); }
-            #card-container { grid-template-columns: 1fr; padding: 10px; grid-auto-rows: min-content; }
+            
+            #card-container { 
+                grid-template-columns: 1fr; /* 單欄 */
+                padding: 10px; 
+                padding-bottom: 120px; /* 手機版底部留白更多一點，避開 Home Indicator */
+                grid-auto-rows: min-content; 
+            }
             .boss-card { width: 100%; max-width: none; height: auto; }
         }
         
@@ -458,7 +461,6 @@
                     const response = await fetch('monsters.json');
                     if (response.ok) {
                         allBosses = await response.json();
-                        // [修改] 初始化 floatSec
                         allBosses = allBosses.map(b => ({
                             ...b, targetTime: null, respawnNotified: false, floatSec: 0
                         }));
@@ -558,6 +560,11 @@
             localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
             renderSidebar();
             renderGrid();
+        }
+
+        function scrollToTop() {
+            const container = document.getElementById('card-container');
+            container.scrollTop = 0;
         }
 
         function renderGrid() {
@@ -679,7 +686,6 @@
                     } 
                     else if (diff > 0 && settings.notifyCountdown) {
                         const remainingMin = Math.floor(diff / 60000);
-                        // [修正] 3分59秒=4分，所以倒數到 2:59 時，代表還有 3 分鐘
                         if (remainingMin === (settings.notifyMin - 1) && boss.lastCountdownMin !== remainingMin) {
                             sendCountdownNotification(boss.name, settings.notifyMin);
                             boss.lastCountdownMin = remainingMin;
@@ -690,6 +696,7 @@
             if (needsReorder) {
                 saveData();
                 renderGrid(); 
+                // 不自動置頂，只在自動排序時重繪
             }
             document.querySelectorAll('.boss-card').forEach(card => {
                 const id = parseInt(card.dataset.id);
@@ -705,7 +712,6 @@
             if (!boss.targetTime) {
                 statusEl.innerText = ""; 
                 statusEl.style.display = 'none';
-                
                 timerEl.innerText = "--:--:--";
                 timerEl.style.color = "#777";
                 card.classList.remove('active', 'expired');
@@ -743,9 +749,8 @@
                 const s = Math.floor((diff % 60000) / 1000);
                 const countDownStr = `${pad(h)}:${pad(m)}:${pad(s)}`;
                 
-                // [修正] 顯示浮動時間
+                // [修正] 浮動時間顯示
                 const floatStr = boss.floatSec === 600 ? "+ 10:00" : "+ 00:00";
-                
                 const fullTimerText = `${countDownStr} ${floatStr}`;
                 
                 if (timerEl.innerText !== fullTimerText) {
@@ -781,13 +786,14 @@
         function killBoss(id) {
             const boss = allBosses.find(b => b.id === id);
             if (boss) {
-                // [修正] 目標時間 = 擊殺時間 + 重生CD (不加10分鐘)
+                // [修正] 目標時間 = 擊殺時間 + 重生CD
                 boss.targetTime = Date.now() + (boss.respawnHour * 3600000);
-                boss.floatSec = 600; // 浮動顯示
+                boss.floatSec = 600; // 浮動10分
                 boss.respawnNotified = false; 
                 boss.lastCountdownMin = null;
                 saveData();
                 renderGrid();
+                scrollToTop(); // 操作後置頂
             }
         }
 
@@ -800,6 +806,7 @@
                 boss.lastCountdownMin = null;
                 saveData();
                 renderGrid();
+                scrollToTop(); // 操作後置頂
             }
         }
 
@@ -841,6 +848,7 @@
                 mInput.value = '';
                 saveData();
                 renderGrid();
+                scrollToTop(); // 操作後置頂
             }
         }
 
@@ -886,6 +894,7 @@
             renderManageList();
             renderSidebar();
             renderGrid();
+            scrollToTop();
         }
 
         function deleteMonster(index) {
