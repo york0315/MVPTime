@@ -5,19 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MVP儀表板</title>
     
-    <!-- PWA 設定 -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <!-- 連結外部 CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <!-- 左側側邊欄 -->
     <div id="sidebar">
         <div class="sidebar-toggle-tab" onclick="toggleSidebar()" id="toggle-btn">&lt;</div>
         <div class="sidebar-header">
@@ -37,7 +34,6 @@
                 <label><input type="checkbox" id="chk-notify-respawn" onchange="toggleRespawnSettings()"> 重生通知</label>
             </div>
             <div class="notify-row">
-                <!-- [修正] 移除文字 "前" -->
                 <label id="lbl-notify-countdown"><input type="checkbox" id="chk-notify-countdown" onchange="saveSettings()"> 倒數通知</label>
                 <div class="notify-input-group">
                     <input type="number" id="inp-notify-min" value="3" min="1" max="60" onchange="saveSettings()">
@@ -48,7 +44,6 @@
 
         <div class="sidebar-content" id="sidebar-list"></div>
 
-        <!-- 搜尋與排序 -->
         <div class="sidebar-search-area">
             <input type="text" id="sidebar-search" class="sidebar-search" placeholder="🔍 搜尋魔物..." oninput="renderSidebar()">
             <button class="btn-sort-trigger" onclick="openSortModal()">⇅</button>
@@ -60,12 +55,10 @@
         </div>
     </div>
 
-    <!-- 右側主內容 -->
     <div id="main-content">
         <div id="card-container"></div>
     </div>
 
-    <!-- 設定視窗 -->
     <div id="settings-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -113,7 +106,6 @@
         </div>
     </div>
 
-    <!-- 排序選單視窗 -->
     <div id="sort-modal">
         <div class="modal-content" style="width: 300px;">
             <div class="modal-header">
@@ -133,7 +125,6 @@
         </div>
     </div>
 
-    <!-- 連結外部 JS -->
     <script src="script.js"></script>
 </body>
 </html>
