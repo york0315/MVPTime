@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOSS計時器</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --accent-color: #4CAF50;
+            --danger-color: #f44336;
+            --input-bg: #444;
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            border-bottom: 2px solid #444;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        /* 格狀排列系統：自動適應寬度，每行約 3-4 個 */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            padding: 10px;
+        }
+
+        /* 卡片樣式 */
+        .boss-card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border-left: 5px solid #777; /* 預設灰色：未啟動 */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: transform 0.2s, border-color 0.3s;
+            position: relative;
+        }
+
+        /* 倒數中樣式 */
+        .boss-card.active {
+            border-left-color: var(--accent-color);
+            background-color: #333;
+        }
+
+        /* 時間到樣式 */
+        .boss-card.expired {
+            border-left-color: var(--danger-color);
+            border: 2px solid var(--danger-color);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+
+        .boss-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .respawn-time {
+            font-size: 0.9em;
+            color: #aaa;
+        }
+
+        /* 大字體倒數顯示 */
+        .timer-display {
+            text-align: center;
+            font-size: 2em;
+            font-family: monospace;
+            font-weight: bold;
+            color: #ffd700; /* 金黃色 */
+            margin: 10px 0;
+            background: #222;
+            border-radius: 5px;
+            padding: 5px;
+        }
+
+        .end-time-display {
+            text-align: center;
+            font-size: 0.9em;
+            color: #888;
+        }
+
+        /* 修正時間區塊 */
+        .correction-area {
+            background-color: #3a3a3a;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .correction-area label { font-size: 0.8em; }
+        
+        input[type="number"] {
+            width: 50px;
+            background: var(--input-bg);
+            border: 1px solid #555;
+            color: white;
+            padding: 5px;
+            border-radius: 3px;
+            text-align: center;
+        }
+
+        /* 按鈕共用樣式 */
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-weight: bold;
+            color: white;
+            transition: background 0.2s;
+        }
+
+        .btn-update {
+            background-color: #2196F3;
+            font-size: 0.8em;
+        }
+        .btn-update:hover { background-color: #1976D2; }
+
+        .btn-kill {
+            background-color: var(--danger-color);
+            width: 100%;
+            font-size: 1.1em;
+            padding: 12px;
+            margin-top: auto; /* 推到底部 */
+        }
+        .btn-kill:hover { background-color: #d32f2f; }
+
+        /* 排序動畫 */
+        .boss-card {
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>BOSS計時器</h1>
+
+    <div id="card-container" class="grid-container">
+        <!-- 卡片將由 JS 自動生成 -->
+    </div>
+
+    <script>
+        // ================= 設定區 =================
+        // 在這裡新增或修改魔物資料
+        const defaultBossData = [
+            { id: 1, name: "白素貞", respawnHour: 2 }, // 單位：小時 (支援小數點, e.g., 1.5)
+            { id: 2, name: "黃金蟲", respawnHour: 1 },
+            { id: 3, name: "巴風特", respawnHour: 12 },
+            { id: 4, name: "虎王", respawnHour: 1 },
+            { id: 5, name: "俄塞里斯", respawnHour: 1 },
+            { id: 6, name: "死靈騎士", respawnHour: 2 },
+            { id: 7, name: "皮里恩", respawnHour: 2 },
+            { id: 8, name: "蟻后", respawnHour: 2 },
+            { id: 9, name: "海盜之王", respawnHour: 2 }
+        ];
+
+        // ================= 程式邏輯 =================
+        let bosses = [];
+
+        // 初始化：讀取紀錄 或 載入預設值
+        function init() {
+            const saved = localStorage.getItem('ro_boss_timer_data');
+            if (saved) {
+                // 如果有存檔，讀取存檔並合併設定（以防你在程式碼改了重生時間）
+                const savedBosses = JSON.parse(saved);
+                bosses = defaultBossData.map(def => {
+                    const found = savedBosses.find(s => s.id === def.id);
+                    // 保留倒數目標時間，但更新名稱和預設重生時間
+                    return found ? { ...def, targetTime: found.targetTime } : { ...def, targetTime: null };
+                });
+            } else {
+                bosses = defaultBossData.map(b => ({ ...b, targetTime: null }));
+            }
+            
+            renderCards();
+            // 啟動計時器循環 (每秒更新一次介面)
+            setInterval(updateTimerDisplay, 1000);
+        }
+
+        // 核心：儲存資料
+        function saveData() {
+            localStorage.setItem('ro_boss_timer_data', JSON.stringify(bosses));
+        }
+
+        // 核心：排序邏輯
+        function getSortedBosses() {
+            // 複製一份陣列以免影響原始順序的 ID 查找
+            return [...bosses].sort((a, b) => {
+                const now = Date.now();
+                
+                const aActive = a.targetTime !== null;
+                const bActive = b.targetTime !== null;
+
+                // 1. 兩者都在倒數：剩餘時間短的排前面
+                if (aActive && bActive) {
+                    return (a.targetTime - now) - (b.targetTime - now);
+                }
+                // 2. A 在倒數，B 沒倒數：A 排前面
+                if (aActive && !bActive) return -1;
+                // 3. B 在倒數，A 沒倒數：B 排前面
+                if (!aActive && bActive) return 1;
+                // 4. 都沒倒數：照 ID 原始順序 (或你可以改成照名字)
+                return a.id - b.id;
+            });
+        }
+
+        // 渲染畫面 (只在需要重新排列 DOM 時呼叫，例如按下擊殺後)
+        function renderCards() {
+            const container = document.getElementById('card-container');
+            container.innerHTML = ''; // 清空
+
+            const sortedList = getSortedBosses();
+
+            sortedList.forEach(boss => {
+                // 建立卡片 DOM
+                const card = document.createElement('div');
+                card.className = 'boss-card';
+                card.id = `card-${boss.id}`;
+                
+                // 狀態判斷
+                const isActive = boss.targetTime !== null;
+                if (isActive) card.classList.add('active');
+
+                // 內部 HTML
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="boss-name">${boss.name}</span>
+                        <span class="respawn-time">(${boss.respawnHour}H)</span>
+                    </div>
+                    
+                    <div class="timer-display" id="timer-${boss.id}">--:--:--</div>
+                    <div class="end-time-display" id="end-${boss.id}">預計重生: --:--</div>
+
+                    <div class="correction-area">
+                        <label>修正:</label>
+                        <input type="number" id="h-${boss.id}" placeholder="時" min="0">
+                        <input type="number" id="m-${boss.id}" placeholder="分" min="0">
+                        <button class="btn-update" onclick="manualUpdate(${boss.id})">更新</button>
+                    </div>
+
+                    <button class="btn-kill" onclick="killBoss(${boss.id})">擊殺 (開始倒數)</button>
+                `;
+                container.appendChild(card);
+            });
+            
+            // 立即更新一次時間文字
+            updateTimerDisplay();
+        }
+
+        // 每秒執行：更新時間文字與卡片樣式 (不重新渲染 DOM 以免閃爍)
+        function updateTimerDisplay() {
+            const now = Date.now();
+
+            // 這裡我們為了保持卡片順序的即時性，如果發現「順序應該要變了」，其實應該要重繪
+            // 但為了效能，我們通常只更新文字。
+            // 若要實現「自動排列」，建議在每次操作(擊殺/修正)時重繪即可。
+            // 只有當倒數結束那一刻，可能需要重繪來標示過期。
+
+            bosses.forEach(boss => {
+                const timerEl = document.getElementById(`timer-${boss.id}`);
+                const endEl = document.getElementById(`end-${boss.id}`);
+                const cardEl = document.getElementById(`card-${boss.id}`);
+
+                if (!timerEl || !cardEl) return; // 畫面可能還沒畫好
+
+                if (boss.targetTime === null) {
+                    timerEl.innerText = "未計時";
+                    timerEl.style.color = "#777";
+                    endEl.innerText = "等待擊殺...";
+                    cardEl.classList.remove('active', 'expired');
+                    return;
+                }
+
+                const diff = boss.targetTime - now;
+                
+                // 算出預計重生時間字串 (例如 14:30:00)
+                const endDate = new Date(boss.targetTime);
+                const endH = String(endDate.getHours()).padStart(2, '0');
+                const endM = String(endDate.getMinutes()).padStart(2, '0');
+                const endS = String(endDate.getSeconds()).padStart(2, '0');
+                endEl.innerText = `預計重生: ${endH}:${endM}:${endS}`;
+
+                if (diff <= 0) {
+                    // 時間到
+                    timerEl.innerText = "00:00:00";
+                    timerEl.innerText = "已重生!";
+                    timerEl.style.color = "#ff4444";
+                    cardEl.classList.remove('active');
+                    cardEl.classList.add('expired');
+                } else {
+                    // 倒數中
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    
+                    timerEl.innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                    timerEl.style.color = "#ffd700";
+                    cardEl.classList.add('active');
+                    cardEl.classList.remove('expired');
+                }
+            });
+        }
+
+        // 動作：擊殺
+        function killBoss(id) {
+            const boss = bosses.find(b => b.id === id);
+            if (boss) {
+                const now = Date.now();
+                // 計算目標時間：現在 + 設定的小時數
+                boss.targetTime = now + (boss.respawnHour * 60 * 60 * 1000);
+                saveData();
+                renderCards(); // 重新排列順序 (把剛擊殺的排到它該去的位置)
+            }
+        }
+
+        // 動作：手動修正時間
+        function manualUpdate(id) {
+            const boss = bosses.find(b => b.id === id);
+            const hInput = document.getElementById(`h-${id}`);
+            const mInput = document.getElementById(`m-${id}`);
+            
+            // 取得輸入值 (若為空則視為 0)
+            const h = parseInt(hInput.value) || 0;
+            const m = parseInt(mInput.value) || 0;
+
+            if (boss) {
+                const now = Date.now();
+                // 計算目標時間：現在 + 輸入的剩餘時間
+                const remainingMs = (h * 3600 * 1000) + (m * 60 * 1000);
+                
+                if (remainingMs === 0 && hInput.value === "" && mInput.value === "") {
+                    // 如果都沒輸入就按更新 -> 清除計時
+                    boss.targetTime = null;
+                } else {
+                    boss.targetTime = now + remainingMs;
+                }
+
+                // 清空輸入框
+                hInput.value = '';
+                mInput.value = '';
+                
+                saveData();
+                renderCards(); // 重新排列
+            }
+        }
+
+        // 啟動
+        init();
+
+    </script>
+</body>
+</html>
