@@ -22,6 +22,7 @@
             
             --accent-color: #4CAF50;
             --danger-color: #f44336;
+            --info-color: #2196F3;
             --card-border-width: 3px;
             --card-width: 320px; 
         }
@@ -67,7 +68,6 @@
             overflow: visible;
         }
 
-        /* 側邊欄開關按鈕 - 貼底 */
         .sidebar-toggle-tab {
             position: absolute;
             top: auto;
@@ -78,7 +78,7 @@
             background-color: var(--sidebar-bg);
             border: 1px solid var(--border-color);
             border-left: none;
-            border-radius: 0 8px 0 0; 
+            border-radius: 0 8px 0 0;
             color: var(--text-muted);
             cursor: pointer;
             display: flex;
@@ -208,7 +208,7 @@
         .btn-icon:hover { background-color: var(--hover-bg); }
         
         .btn-import { background-color: #FF9800; flex: 1; }
-        .btn-sync { background-color: #2196F3; flex: 1; } /* 藍色 */
+        .btn-sync { background-color: var(--info-color); flex: 1; }
 
         /* === 右側主內容 === */
         #main-content {
@@ -300,19 +300,12 @@
         .modal-section { margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px; }
         .modal-section:last-child { border: none; margin-bottom: 0; padding-bottom: 0; }
         
-        /* [修改] 管理清單樣式 */
         .manage-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--input-bg); margin-bottom: 5px; border-radius: 4px; cursor: grab; transition: background 0.2s, transform 0.2s; }
         .manage-list-item:active { cursor: grabbing; }
         .manage-list-item.dragging { opacity: 0.5; background: var(--accent-color); border: 2px dashed #fff; }
         .manage-list-item.drag-over { border-bottom: 3px solid var(--accent-color); }
         
-        .manage-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex: 1;
-        }
-        /* 側邊欄開關 Checkbox */
+        .manage-left { display: flex; align-items: center; gap: 10px; flex: 1; }
         .sidebar-visibility-chk { transform: scale(1.2); cursor: pointer; }
 
         .manage-controls button { font-size: 0.8em; padding: 4px 8px; cursor: pointer; }
@@ -412,7 +405,8 @@
                         <button class="btn-gray" onclick="exportData()">匯出備份</button>
                     </div>
                     <div style="font-size:0.8em; color:var(--text-muted); margin-top:5px;">
-                        * 同步：補齊缺少的預設魔物 (不影響現有資料)。
+                        * 同步：補齊缺少的預設魔物，若名稱相同則更新重生時間。<br>
+                        * 匯入：合併檔案中的魔物，若名稱相同則更新重生時間。
                     </div>
                 </div>
                 <div class="modal-section">
@@ -507,7 +501,6 @@
             const localList = localStorage.getItem('ro_boss_list');
             if (localList) {
                 allBosses = JSON.parse(localList);
-                // [修改] 初始化 onSidebar 屬性 (向下相容)
                 allBosses.forEach(b => {
                     if (typeof b.onSidebar === 'undefined') b.onSidebar = true;
                 });
@@ -519,16 +512,28 @@
             else allBosses.forEach(b => visibleIds.add(b.id));
         }
 
+        // [修改] 同步邏輯：若名稱存在，則更新 respawnHour
         async function syncDefaultMonsters(isFirstLoad = false) {
             try {
                 const response = await fetch('monsters.json?t=' + new Date().getTime());
                 if (response.ok) {
                     const defaultData = await response.json();
                     let addedCount = 0;
+                    let updatedCount = 0;
+                    
                     let maxId = allBosses.length > 0 ? Math.max(...allBosses.map(b => b.id)) : 0;
 
                     defaultData.forEach(def => {
-                        if (!allBosses.some(b => b.name === def.name)) {
+                        const existing = allBosses.find(b => b.name === def.name);
+                        
+                        if (existing) {
+                            // 若已存在，檢查時間是否不同，若不同則更新
+                            if (existing.respawnHour !== def.respawnHour) {
+                                existing.respawnHour = def.respawnHour;
+                                updatedCount++;
+                            }
+                        } else {
+                            // 若不存在，則新增
                             maxId++;
                             allBosses.push({
                                 id: maxId,
@@ -537,21 +542,22 @@
                                 targetTime: null,
                                 floatSec: 0,
                                 respawnNotified: false,
-                                onSidebar: true // 預設加入側邊欄
+                                onSidebar: true
                             });
                             visibleIds.add(maxId);
                             addedCount++;
                         }
                     });
 
-                    if (addedCount > 0 || isFirstLoad) {
+                    if (addedCount > 0 || updatedCount > 0 || isFirstLoad) {
                         saveData();
                         localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
+                        
                         if (!isFirstLoad) {
                             renderSidebar();
                             renderGrid();
-                            renderManageList();
-                            alert(`同步完成！新增了 ${addedCount} 隻魔物。`);
+                            renderManageList(); 
+                            alert(`同步完成！\n新增：${addedCount} 筆\n更新時間：${updatedCount} 筆`);
                         }
                     } else if (!isFirstLoad) {
                         alert("目前已是最新資料，無需更新。");
@@ -638,7 +644,6 @@
 
             list.innerHTML = '';
             
-            // [修改] 過濾 onSidebar === true 的魔物才顯示在側邊欄
             let displayList = allBosses.filter(b => b.onSidebar !== false); 
 
             if (searchText) {
@@ -691,7 +696,6 @@
         }
 
         function toggleAll(state) {
-            // [修改] 全選/全取消只影響「側邊欄有顯示的 (onSidebar=true)」
             allBosses.forEach(b => {
                 if (b.onSidebar !== false) {
                     state ? visibleIds.add(b.id) : visibleIds.delete(b.id);
@@ -725,7 +729,6 @@
             container.querySelectorAll('.boss-card').forEach(c => existingCards[c.dataset.id] = c);
 
             sortedList.forEach(boss => {
-                // 必須同時：在可見清單中 AND 允許在側邊欄顯示 (作為雙重驗證)
                 if (!visibleIds.has(boss.id) || boss.onSidebar === false) {
                     if (existingCards[boss.id]) existingCards[boss.id].remove();
                     return;
@@ -1055,20 +1058,18 @@
             }
         }
 
-        // [新增] 切換 Sidebar 顯示狀態
         function toggleBossInSidebar(index) {
             allBosses[index].onSidebar = !allBosses[index].onSidebar;
             
-            // 如果隱藏了，也要從可見卡片中移除 (防呆)
             if (!allBosses[index].onSidebar) {
                 visibleIds.delete(allBosses[index].id);
                 localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
             }
             
             saveData();
-            renderManageList(); // 重新渲染管理清單
-            renderSidebar();    // 重新渲染側邊欄
-            renderGrid();       // 重新渲染卡片區
+            renderManageList(); 
+            renderSidebar();    
+            renderGrid();       
         }
 
         function renderManageList() {
@@ -1080,7 +1081,6 @@
                 item.draggable = true;
                 item.dataset.index = index;
                 
-                // [修改] 增加顯示開關 Checkbox
                 item.innerHTML = `
                     <div class="manage-left">
                         <input type="checkbox" class="sidebar-visibility-chk" 
@@ -1093,7 +1093,6 @@
                     </div>
                 `;
                 
-                // 拖曳事件 (同前)
                 item.addEventListener('dragstart', handleDragStart);
                 item.addEventListener('dragover', handleDragOver);
                 item.addEventListener('drop', handleDrop);
@@ -1129,7 +1128,7 @@
             a.click();
         }
 
-        // [修改] 匯入功能 - 合併模式 (Merge)
+        // [修改] 匯入合併邏輯：名稱相同更新時間
         function importData(input) {
             const file = input.files[0];
             if (!file) return;
@@ -1140,11 +1139,20 @@
                     if (!Array.isArray(json)) throw new Error("檔案格式錯誤");
                     
                     let addedCount = 0;
+                    let updatedCount = 0;
                     let maxId = allBosses.length > 0 ? Math.max(...allBosses.map(b => b.id)) : 0;
 
                     json.forEach((item) => {
                         if (item.name && item.respawnHour !== undefined) {
-                            if (!allBosses.some(b => b.name === item.name)) {
+                            const existing = allBosses.find(b => b.name === item.name);
+                            if (existing) {
+                                // 更新
+                                if (existing.respawnHour !== Number(item.respawnHour)) {
+                                    existing.respawnHour = Number(item.respawnHour);
+                                    updatedCount++;
+                                }
+                            } else {
+                                // 新增
                                 maxId++;
                                 allBosses.push({
                                     id: maxId,
@@ -1160,13 +1168,12 @@
                         }
                     });
 
-                    if (confirm(`成功讀取檔案，將合併 ${addedCount} 筆新魔物資料。`)) {
+                    if (confirm(`匯入完成！\n新增：${addedCount} 筆\n更新時間：${updatedCount} 筆`)) {
                         saveData();
                         localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
                         renderSidebar();
                         renderGrid();
                         renderManageList();
-                        alert("匯入合併成功！");
                     }
                 } catch (err) { alert("匯入失敗：" + err.message); } finally { input.value = ''; }
             };
