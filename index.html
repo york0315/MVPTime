@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RO BOSS計時器 Pro</title>
+    <title>MVP儀表板</title>
     <style>
         /* === CSS 變數定義 === */
         :root {
@@ -113,6 +113,42 @@
             background-color: var(--sidebar-bg);
         }
 
+        /* [新增] 通知設定區域 (側邊欄內) */
+        .sidebar-notify-settings {
+            padding: 10px 15px;
+            background-color: var(--sidebar-bg);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9em;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .notify-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .notify-row label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        .notify-input-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .notify-input-group input[type="number"] {
+            width: 40px;
+            padding: 2px;
+            text-align: center;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 3px;
+        }
+
         .sidebar-controls {
             padding: 10px;
             border-bottom: 1px solid var(--border-color);
@@ -219,8 +255,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
-            /* [修改] 縮小內部間距 */
-            gap: 4px; 
+            gap: 4px;
             position: relative;
             transition: box-shadow 0.3s;
             will-change: transform;
@@ -256,7 +291,6 @@
             justify-content: center;
             gap: 10px;
             background: var(--timer-bg);
-            /* [修改] 縮小 padding 與 margin */
             padding: 5px; 
             border-radius: 5px;
             margin: 2px 0;
@@ -283,7 +317,6 @@
 
         .correction-area { 
             background-color: var(--input-bg); 
-            /* [修改] 縮小 padding 與 margin */
             padding: 5px; 
             border-radius: 5px; 
             display: flex; 
@@ -291,7 +324,7 @@
             gap: 5px; 
             z-index: 2; 
             position: relative; 
-            margin-bottom: 4px; /* 讓底部按鈕更貼近 */
+            margin-bottom: 4px;
         }
         
         .mode-select {
@@ -315,7 +348,6 @@
             text-align: center; 
         }
         
-        /* 更新按鈕 */
         .btn-update { 
             background-color: #2196F3; 
             font-size: 0.8em; 
@@ -332,11 +364,9 @@
             position: relative;
         }
 
-        /* [修改] 擊殺按鈕 (字體大小調整) */
         .btn-kill { 
             background-color: var(--danger-color); 
             flex: 1;
-            /* [修改] 字體與 btn-update 一致 */
             font-size: 0.8em; 
             font-weight: bold;
             padding: 10px; 
@@ -346,12 +376,10 @@
         }
         .btn-kill:hover { background-color: #d32f2f; }
 
-        /* [修改] 取消按鈕 (字體大小調整) */
         .btn-cancel {
             background-color: #9e9e9e;
             flex: 0 0 auto;
             min-width: 60px;
-            /* [修改] 字體與 btn-update 一致 */
             font-size: 0.8em;
             font-weight: bold;
             padding: 10px;
@@ -398,8 +426,9 @@
             .boss-card {
                 width: 100%;
                 max-width: none;
+                /* [修改] 移除最小高度限制，讓手機版自然撐開 */
                 height: auto;
-                min-height: 240px; /* 調整手機版最小高度 */
+                min-height: 0; 
             }
         }
         
@@ -418,9 +447,24 @@
     <div id="sidebar">
         <div class="sidebar-toggle-tab" onclick="toggleSidebar()" id="toggle-btn">&lt;</div>
         <div class="sidebar-header">
-            <span>BOSS計時器</span>
+            <span>MVP儀表板</span>
             <button class="btn-icon" onclick="openSettings()" title="設定">⚙️</button>
         </div>
+
+        <!-- [新增] 通知設定區域 (移至搜尋上方) -->
+        <div class="sidebar-notify-settings">
+            <div class="notify-row">
+                <label><input type="checkbox" id="chk-notify-respawn" onchange="saveSettings()"> 重生通知</label>
+            </div>
+            <div class="notify-row">
+                <label><input type="checkbox" id="chk-notify-countdown" onchange="saveSettings()"> 倒數通知</label>
+                <div class="notify-input-group">
+                    <input type="number" id="inp-notify-min" value="10" min="1" max="60" onchange="saveSettings()">
+                    <span>分前</span>
+                </div>
+            </div>
+        </div>
+
         <div class="sidebar-controls">
             <input type="text" id="sidebar-search" class="sidebar-search" placeholder="🔍 搜尋魔物..." oninput="renderSidebar()">
             <select id="sidebar-sort" class="sidebar-sort" onchange="renderSidebar()">
@@ -452,10 +496,6 @@
             <div class="modal-body">
                 <div class="modal-section">
                     <h3>一般設定</h3>
-                    <label style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                        <input type="checkbox" id="chk-notify" onchange="saveSettings()" style="width:auto;">
-                        啟用重生系統通知
-                    </label>
                     <label style="display:flex; align-items:center; gap:10px;">
                         <input type="checkbox" id="chk-theme" onchange="toggleTheme()" style="width:auto;">
                         使用淺色模式 (Light Mode) - 預設開啟
@@ -488,7 +528,13 @@
     <script>
         let allBosses = []; 
         let visibleIds = new Set(); 
-        let settings = { notify: false, lightMode: true };
+        // [修改] 增加倒數設定
+        let settings = { 
+            notifyRespawn: false, 
+            notifyCountdown: false, 
+            notifyMin: 10,
+            lightMode: true 
+        };
 
         async function init() {
             loadSettings();
@@ -539,7 +585,7 @@
                     const response = await fetch('monsters.json');
                     if (response.ok) {
                         allBosses = await response.json();
-                        allBosses = allBosses.map(b => ({...b, targetTime: null}));
+                        allBosses = allBosses.map(b => ({...b, targetTime: null, respawnNotified: false}));
                         saveData();
                     }
                 } catch (e) { allBosses = []; }
@@ -554,18 +600,21 @@
         function loadSettings() {
             const s = localStorage.getItem('ro_boss_settings');
             if (s) {
-                settings = JSON.parse(s);
-            } else {
-                settings.lightMode = true;
-                saveSettings();
+                const parsed = JSON.parse(s);
+                // Merge default with saved to ensure new keys exist
+                settings = { ...settings, ...parsed };
             }
-            document.getElementById('chk-notify').checked = settings.notify;
+            document.getElementById('chk-notify-respawn').checked = settings.notifyRespawn;
+            document.getElementById('chk-notify-countdown').checked = settings.notifyCountdown;
+            document.getElementById('inp-notify-min').value = settings.notifyMin;
             document.getElementById('chk-theme').checked = settings.lightMode;
             applyTheme();
         }
 
         function saveSettings() {
-            settings.notify = document.getElementById('chk-notify').checked;
+            settings.notifyRespawn = document.getElementById('chk-notify-respawn').checked;
+            settings.notifyCountdown = document.getElementById('chk-notify-countdown').checked;
+            settings.notifyMin = parseInt(document.getElementById('inp-notify-min').value) || 10;
             localStorage.setItem('ro_boss_settings', JSON.stringify(settings));
         }
 
@@ -747,9 +796,22 @@
                 if (boss.targetTime) {
                     const diff = boss.targetTime - now;
                     const timeoutLimit = -(boss.respawnHour * 3600000);
+                    
+                    // 自動重置 (過期)
                     if (diff <= timeoutLimit) {
                         boss.targetTime = null;
+                        boss.respawnNotified = false; // 重置通知旗標
+                        boss.lastCountdownMin = null; // 重置倒數
                         needsReorder = true;
+                    } 
+                    // 倒數通知邏輯
+                    else if (diff > 0 && settings.notifyCountdown) {
+                        const remainingMin = Math.floor(diff / 60000);
+                        // 如果在設定的倒數時間內，且這一分鐘還沒通知過
+                        if (remainingMin <= settings.notifyMin && boss.lastCountdownMin !== remainingMin) {
+                            sendCountdownNotification(boss.name, remainingMin);
+                            boss.lastCountdownMin = remainingMin;
+                        }
                     }
                 }
             });
@@ -793,7 +855,13 @@
                     timerEl.style.color = "#ff4444";
                     card.classList.remove('active');
                     card.classList.add('expired');
-                    sendNotification(boss.name);
+                    
+                    // [修正] 檢查 flag 防止重複通知
+                    if (settings.notifyRespawn && !boss.respawnNotified) {
+                        sendNotification(boss.name);
+                        boss.respawnNotified = true;
+                        saveData(); // 儲存通知狀態
+                    }
                 }
             } else {
                 const h = Math.floor(diff / 3600000);
@@ -815,8 +883,17 @@
         function pad(n) { return n < 10 ? '0'+n : n; }
 
         function sendNotification(bossName) {
-            if (settings.notify && Notification.permission === "granted") {
-                new Notification("BOSS重生提醒", { body: `${bossName} 已經重生了！`, icon: "" });
+            if (Notification.permission === "granted") {
+                new Notification("BOSS重生提醒", { body: `${bossName} 已經重生了！` });
+            }
+        }
+
+        // [新增] 倒數通知
+        function sendCountdownNotification(bossName, min) {
+            if (Notification.permission === "granted") {
+                const n = new Notification("BOSS倒數提醒", { body: `${bossName} 將在 ${min} 分鐘後重生` });
+                // 5秒後自動關閉
+                setTimeout(() => n.close(), 5000);
             }
         }
 
@@ -824,6 +901,8 @@
             const boss = allBosses.find(b => b.id === id);
             if (boss) {
                 boss.targetTime = Date.now() + (boss.respawnHour * 3600000) + 600000;
+                boss.respawnNotified = false; // 重置
+                boss.lastCountdownMin = null;
                 saveData();
                 renderGrid();
             }
@@ -833,6 +912,8 @@
             const boss = allBosses.find(b => b.id === id);
             if (boss) {
                 boss.targetTime = null;
+                boss.respawnNotified = false;
+                boss.lastCountdownMin = null;
                 saveData();
                 renderGrid();
             }
@@ -855,10 +936,8 @@
                     boss.targetTime = null;
                 } else {
                     if (mode === 'remaining') {
-                        // 剩餘模式：目前時間 + 輸入時間 + 1分鐘
                         boss.targetTime = Date.now() + (h * 3600000) + (m * 60000) + 60000;
                     } else {
-                        // 擊殺模式：指定擊殺時間 + 重生CD + 10分鐘
                         const now = new Date();
                         let killTime = new Date();
                         killTime.setHours(h, m, 0, 0);
@@ -868,6 +947,8 @@
                         boss.targetTime = killTime.getTime() + (boss.respawnHour * 3600000) + 600000;
                     }
                 }
+                boss.respawnNotified = false; // 重置
+                boss.lastCountdownMin = null;
                 hInput.value = '';
                 mInput.value = '';
                 saveData();
@@ -883,13 +964,27 @@
 
         function addNewMonster() {
             const name = document.getElementById('new-name').value.trim();
-            const time = parseFloat(document.getElementById('new-time').value);
-            if (!name || isNaN(time)) return;
+            const timeStr = document.getElementById('new-time').value;
+            const time = parseFloat(timeStr);
+
+            // [修正] 防呆檢查
+            if (!name) {
+                alert("請輸入魔物名稱！");
+                return;
+            }
+            if (isNaN(time)) {
+                alert("請輸入正確的重生時間 (小時)！");
+                return;
+            }
+            if (allBosses.some(b => b.name === name)) {
+                alert("該魔物名稱已存在！");
+                return;
+            }
+
             const newId = allBosses.length > 0 ? Math.max(...allBosses.map(b => b.id)) + 1 : 1;
             allBosses.push({ id: newId, name: name, respawnHour: time, targetTime: null });
             visibleIds.add(newId);
             saveData();
-            // 立即儲存勾選狀態
             localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
             
             document.getElementById('new-name').value = '';
