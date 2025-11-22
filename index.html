@@ -224,9 +224,12 @@
             transition: box-shadow 0.3s;
             will-change: transform;
             width: var(--card-width); 
-            overflow: hidden;
-            height: auto;
-            padding-bottom: 15px;
+            overflow: hidden; /* 保持圓角 */
+            
+            /* [修改] 卡片高度與佈局控制 */
+            height: auto; /* 自動高度 */
+            min-height: 280px; /* 設定最小高度，防止手機版塌陷 */
+            justify-content: space-between; /* 內容撐開 */
         }
 
         span.border-anim { position: absolute; display: none; }
@@ -288,6 +291,7 @@
             gap: 5px; 
             z-index: 2; 
             position: relative; 
+            margin-bottom: 10px; /* 增加底部間距，避免貼著按鈕 */
         }
         
         .mode-select {
@@ -322,7 +326,7 @@
         .card-actions {
             display: flex;
             gap: 10px;
-            margin-top: auto;
+            /* margin-top: auto;  (由父層 space-between 控制) */
             z-index: 2;
             position: relative;
         }
@@ -382,11 +386,15 @@
             #card-container {
                 grid-template-columns: 1fr;
                 padding: 10px;
+                /* 確保 Grid Row 高度自動適應 */
+                grid-auto-rows: min-content;
             }
             .boss-card {
                 width: 100%;
                 max-width: none;
+                /* [修正] 手機版確保高度有彈性但有最小值 */
                 height: auto;
+                min-height: 280px; 
             }
         }
         
@@ -809,7 +817,7 @@
         function killBoss(id) {
             const boss = allBosses.find(b => b.id === id);
             if (boss) {
-                boss.targetTime = Date.now() + (boss.respawnHour * 3600000);
+                boss.targetTime = Date.now() + (boss.respawnHour * 3600000) + 600000;
                 saveData();
                 renderGrid();
             }
@@ -824,7 +832,6 @@
             }
         }
 
-        // [修改] Manual Update 邏輯：擊殺+10分，剩餘+1分
         function manualUpdate(id) {
             const boss = allBosses.find(b => b.id === id);
             const mode = document.getElementById(`mode-${id}`).value;
@@ -842,10 +849,8 @@
                     boss.targetTime = null;
                 } else {
                     if (mode === 'remaining') {
-                        // 剩餘模式：目前時間 + 輸入時間 + 1分鐘
                         boss.targetTime = Date.now() + (h * 3600000) + (m * 60000) + 60000;
                     } else {
-                        // 擊殺模式：指定擊殺時間 + 重生CD + 10分鐘
                         const now = new Date();
                         let killTime = new Date();
                         killTime.setHours(h, m, 0, 0);
@@ -876,6 +881,9 @@
             allBosses.push({ id: newId, name: name, respawnHour: time, targetTime: null });
             visibleIds.add(newId);
             saveData();
+            // [修正] 立即儲存勾選狀態
+            localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
+            
             document.getElementById('new-name').value = '';
             document.getElementById('new-time').value = '';
             renderManageList();
