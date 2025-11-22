@@ -215,15 +215,13 @@ button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; f
     position: relative;
 }
 
-/* [重要修正] 卡片容器設定 */
 #card-container {
     flex: 1;
     overflow-y: auto;
     padding: 20px;
     display: grid;
-    /* 確保卡片寬度固定，自動換行 */
     grid-template-columns: repeat(auto-fill, var(--card-width));
-    /* [修正] 關鍵：設定行高為內容自動撐開，防止塌陷 */
+    /* [修正] 設定自動行高，但依賴卡片的 min-height */
     grid-auto-rows: max-content;
     gap: 20px;
     align-content: start;
@@ -243,14 +241,15 @@ button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; f
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
+    justify-content: space-between; /* 讓內容上下撐開 */
     gap: 4px;
     position: relative;
     transition: box-shadow 0.3s;
     will-change: transform;
     width: var(--card-width); 
     
-    /* [修正] 確保有最小高度，避免內容渲染前塌陷 */
-    min-height: 220px; 
+    /* [重點修正] 強制設定最小高度，防止卡片塌陷 */
+    min-height: 280px; 
     height: auto;
     overflow: hidden;
 }
@@ -286,7 +285,6 @@ span.border-anim {
 }
 .btn-kill-header:hover { background-color: #d32f2f; }
 
-/* 計時器 */
 .timer-group {
     display: flex; 
     flex-direction: row; 
@@ -358,7 +356,7 @@ input[type="text"] { background: var(--bg-color); border: 1px solid var(--border
     }
     #sidebar.open { transform: translateX(280px); }
     #card-container { grid-template-columns: 1fr; padding: 10px; grid-auto-rows: min-content; }
-    .boss-card { width: 100%; max-width: none; height: auto; }
+    .boss-card { width: 100%; max-width: none; height: auto; min-height: 280px; }
 }
 
 @media (min-width: 769px) {
