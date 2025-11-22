@@ -73,7 +73,6 @@
             padding: 10px;
         }
 
-        /* 側邊欄項目樣式優化 */
         .monster-check-item {
             display: flex;
             align-items: center;
@@ -86,7 +85,6 @@
         .monster-check-item:hover { background-color: var(--hover-bg); }
         .monster-check-item input { margin-right: 8px; cursor: pointer; transform: scale(1.1); }
         
-        /* 讓 Label 變成 Flex 容器以利對齊 */
         .sidebar-label {
             display: flex;
             align-items: center;
@@ -94,11 +92,10 @@
             font-size: 0.95em;
         }
         
-        /* 時間徽章樣式 */
         .time-badge {
             display: inline-block;
-            width: 50px; /* 固定寬度 */
-            text-align: center; /* 置中 */
+            width: 50px;
+            text-align: center;
             background-color: var(--input-bg);
             border-radius: 4px;
             padding: 2px 0;
@@ -106,7 +103,7 @@
             font-family: monospace;
             font-weight: bold;
             color: var(--accent-color);
-            flex-shrink: 0; /* 防止被擠壓 */
+            flex-shrink: 0;
         }
 
         .name-text {
@@ -160,10 +157,9 @@
             flex-direction: column;
             gap: 8px;
             position: relative;
-            /* 移除 transition: transform，改由 JS 控制動畫 */
             transition: box-shadow 0.3s;
             overflow: hidden;
-            will-change: transform; /* 效能優化 */
+            will-change: transform;
         }
 
         span.border-anim { position: absolute; display: none; }
@@ -189,11 +185,39 @@
         .timer-display { text-align: center; font-size: 1.8em; font-family: monospace; font-weight: bold; color: #ffd700; margin: 5px 0; background: #222; border-radius: 5px; padding: 5px; z-index: 2; position: relative; }
         [data-theme="light"] .timer-display { background: #333; }
 
-        .correction-area { background-color: var(--input-bg); padding: 8px; border-radius: 5px; display: flex; align-items: center; gap: 5px; z-index: 2; position: relative; }
+        /* [修改] 修正區域 UI 優化 */
+        .correction-area { 
+            background-color: var(--input-bg); 
+            padding: 8px; 
+            border-radius: 5px; 
+            display: flex; 
+            align-items: center; 
+            gap: 5px; 
+            z-index: 2; 
+            position: relative; 
+        }
         .correction-area label { white-space: nowrap; font-size: 0.9em; }
-        input[type="number"] { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; width: 60px; text-align: center; }
         
-        .btn-update { background-color: #2196F3; font-size: 0.8em; white-space: nowrap; padding: 6px 10px; }
+        /* 讓輸入框自動伸縮填滿空間 */
+        .correction-area input[type="number"] { 
+            flex: 1; /* 關鍵：佔據剩餘空間 */
+            background: var(--bg-color); 
+            border: 1px solid var(--border-color); 
+            color: var(--text-color); 
+            padding: 5px; 
+            border-radius: 3px; 
+            min-width: 0; /* 防止 Flex 子元素溢出 */
+            text-align: center;
+        }
+        
+        .btn-update { 
+            background-color: #2196F3; 
+            font-size: 0.8em; 
+            white-space: nowrap; 
+            padding: 6px 12px; 
+            flex-shrink: 0; /* 防止按鈕被壓扁 */
+        }
+        
         .btn-kill { background-color: var(--danger-color); width: 100%; font-size: 1em; padding: 10px; margin-top: auto; z-index: 2; position: relative; cursor: pointer; }
         .btn-kill:hover { background-color: #d32f2f; }
 
@@ -349,7 +373,6 @@
                 checkbox.checked = visibleIds.has(boss.id);
                 checkbox.onclick = (e) => { e.stopPropagation(); toggleVisibility(boss.id, e.target.checked); };
                 
-                // [修改] 將時間與名稱分開，使用 Flexbox 對齊
                 const label = document.createElement('label');
                 label.className = 'sidebar-label';
                 label.innerHTML = `
@@ -376,18 +399,15 @@
             renderGrid();
         }
 
-        // [修改] 增加 FLIP 動畫邏輯
         function renderGrid() {
             const container = document.getElementById('card-container');
             const sortedList = getSortedBosses();
             
-            // 1. First: 記錄所有卡片目前的位置
             const firstPositions = new Map();
             container.querySelectorAll('.boss-card').forEach(card => {
                 firstPositions.set(card.dataset.id, card.getBoundingClientRect());
             });
 
-            // 2. DOM 操作 (保留輸入狀態)
             const existingCards = {};
             container.querySelectorAll('.boss-card').forEach(c => existingCards[c.dataset.id] = c);
 
@@ -402,28 +422,22 @@
                     existingCards[boss.id] = card;
                 }
                 updateCardVisuals(card, boss);
-                // appendChild 會將現有元素移動到新位置 (改變順序)
                 container.appendChild(card);
             });
 
-            // 3. Last & Invert & Play: 計算位移並執行動畫
             container.querySelectorAll('.boss-card').forEach(card => {
                 const first = firstPositions.get(card.dataset.id);
                 if (first) {
                     const last = card.getBoundingClientRect();
-                    
-                    // 計算位移量 (Delta)
                     const deltaX = first.left - last.left;
                     const deltaY = first.top - last.top;
-
-                    // 如果有位移，執行動畫
                     if (deltaX !== 0 || deltaY !== 0) {
                         card.animate([
                             { transform: `translate(${deltaX}px, ${deltaY}px)` },
                             { transform: 'none' }
                         ], {
-                            duration: 400, // 動畫時間
-                            easing: 'cubic-bezier(0.2, 0, 0.2, 1)', // 緩衝曲線
+                            duration: 400,
+                            easing: 'cubic-bezier(0.2, 0, 0.2, 1)',
                             fill: 'both'
                         });
                     }
@@ -473,8 +487,35 @@
             });
         }
 
+        // [修改] 增加自動重置邏輯的 tick 函數
         function tick() {
             const now = Date.now();
+            let needsReorder = false;
+
+            // 1. 先檢查是否有過期太久需要重置的魔物
+            allBosses.forEach(boss => {
+                if (boss.targetTime) {
+                    const diff = boss.targetTime - now;
+                    // 重置門檻：負的重生時間 (代表經過了一整個重生週期)
+                    // 例如重生時間 1H，targetTime 是 12:00，現在 13:00，diff = -1H。
+                    const timeoutLimit = -(boss.respawnHour * 3600000);
+
+                    if (diff <= timeoutLimit) {
+                        boss.targetTime = null; // 重置為未追蹤
+                        needsReorder = true;
+                    }
+                }
+            });
+
+            // 2. 如果有魔物被重置，需要存檔並重新排序(FLIP)
+            if (needsReorder) {
+                saveData();
+                renderGrid(); 
+                // 這裡不需要 return，因為 renderGrid 已經處理了 DOM，
+                // 下面的 visual update 會針對新的狀態更新文字(變回"未追蹤")
+            }
+
+            // 3. 更新畫面文字
             document.querySelectorAll('.boss-card').forEach(card => {
                 const id = parseInt(card.dataset.id);
                 const boss = allBosses.find(b => b.id === id);
