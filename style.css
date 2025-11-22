@@ -1,6 +1,5 @@
 /* === CSS 變數定義 === */
 :root {
-    /* 淺色模式 (Light Mode) */
     --bg-color: #f0f2f5;
     --sidebar-bg: #ffffff;
     --card-bg: #ffffff;
@@ -16,12 +15,12 @@
     --accent-color: #4CAF50;
     --danger-color: #f44336;
     --info-color: #2196F3;
+    --share-color: #9C27B0; /* [新增] 分享按鈕紫色 */
     --card-border-width: 3px;
     --card-width: 320px; 
 }
 
-/* 深色模式 (Dark Mode) */
-html[data-theme="dark"] {
+[data-theme="dark"] {
     --bg-color: #1e1e1e;
     --sidebar-bg: #252526;
     --card-bg: #2d2d2d;
@@ -42,7 +41,6 @@ body {
     color: var(--text-color);
     margin: 0;
     height: 100vh;
-    height: 100dvh;
     display: flex;
     overflow: hidden;
     transition: background 0.3s, color 0.3s;
@@ -62,7 +60,6 @@ body {
     overflow: visible;
 }
 
-/* 側邊欄開關按鈕 */
 .sidebar-toggle-tab {
     position: absolute;
     top: auto;
@@ -128,14 +125,22 @@ body {
 .notify-input-group input[type="number"] { width: 40px; padding: 2px; text-align: center; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 3px; }
 .notify-input-group input[type="number"]:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* [修改] 搜尋與分享區塊 (改為垂直排列) */
 .sidebar-search-area {
     padding: 10px;
     border-top: 1px solid var(--border-color);
     background-color: var(--sidebar-bg);
     display: flex;
+    flex-direction: column; /* 垂直排列 */
     gap: 8px;
-    align-items: center;
     flex-shrink: 0;
+}
+
+/* [新增] 搜尋列容器 (橫向排列搜尋框與排序鈕) */
+.search-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
 }
 
 .sidebar-search {
@@ -161,6 +166,24 @@ body {
     justify-content: center;
 }
 .btn-sort-trigger:hover { background: var(--hover-bg); }
+
+/* [新增] 分享按鈕樣式 */
+.btn-share-link {
+    width: 100%;
+    background-color: var(--share-color);
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: opacity 0.2s;
+}
+.btn-share-link:hover { opacity: 0.9; }
 
 .sidebar-content {
     flex: 1;
@@ -221,7 +244,6 @@ button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; f
     padding: 20px;
     display: grid;
     grid-template-columns: repeat(auto-fill, var(--card-width));
-    /* 自動撐開高度 */
     grid-auto-rows: max-content;
     gap: 20px;
     align-content: start;
@@ -241,15 +263,11 @@ button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; f
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
-    /* [修正] 取消分散對齊，改用 Gap 讓內容緊湊 */
-    /* justify-content: space-between;  <-- 移除這行 */
-    gap: 10px; /* 設定統一間距 */
+    gap: 4px;
     position: relative;
     transition: box-shadow 0.3s;
     will-change: transform;
     width: var(--card-width); 
-    
-    /* [修正] 移除強制高度，改為 auto */
     min-height: auto; 
     height: auto;
     overflow: hidden;
@@ -286,7 +304,6 @@ span.border-anim {
 }
 .btn-kill-header:hover { background-color: #d32f2f; }
 
-/* 計時器 */
 .timer-group {
     display: flex; 
     flex-direction: row; 
@@ -313,12 +330,10 @@ span.border-anim {
     width: 100%; 
 }
 
-/* [修正] 輸入區塊 - 移除 margin-top: auto，讓它自然跟隨 */
 .correction-area { 
     background-color: var(--input-bg); padding: 5px; border-radius: 5px; 
     display: flex; align-items: center; gap: 5px; 
-    z-index: 2; position: relative; 
-    /* margin-top: auto; <-- 移除這行 */
+    z-index: 2; position: relative; margin-top: auto;
 }
 
 .mode-select { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; font-size: 0.8em; cursor: pointer; }
