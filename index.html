@@ -37,6 +37,7 @@
                 <label><input type="checkbox" id="chk-notify-respawn" onchange="toggleRespawnSettings()"> 重生通知</label>
             </div>
             <div class="notify-row">
+                <!-- [修正] 移除文字 "前" -->
                 <label id="lbl-notify-countdown"><input type="checkbox" id="chk-notify-countdown" onchange="saveSettings()"> 倒數通知</label>
                 <div class="notify-input-group">
                     <input type="number" id="inp-notify-min" value="3" min="1" max="60" onchange="saveSettings()">
