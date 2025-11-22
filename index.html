@@ -69,9 +69,9 @@
 
         .sidebar-toggle-tab {
             position: absolute;
-            top: 50%;
+            top: auto;
+            bottom: 20px;
             left: 100%;
-            transform: translateY(-50%);
             width: 24px;
             height: 80px;
             background-color: var(--sidebar-bg);
@@ -105,8 +105,10 @@
         .sidebar-header {
             padding: 20px 15px;
             border-bottom: 1px solid var(--border-color);
-            font-weight: bold;
-            font-size: 1.2em;
+            /* [修改] 字體加大加粗 */
+            font-weight: 900;
+            font-size: 1.6em; 
+            letter-spacing: 1px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -121,29 +123,52 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            /* 確保不縮放 */
+            flex-shrink: 0; 
         }
         .notify-row { display: flex; align-items: center; justify-content: space-between; }
         .notify-row label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .notify-row label.disabled { color: var(--text-muted); opacity: 0.6; cursor: not-allowed; }
+        
         .notify-input-group { display: flex; align-items: center; gap: 5px; }
         .notify-input-group input[type="number"] { width: 40px; padding: 2px; text-align: center; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 3px; }
+        .notify-input-group input[type="number"]:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .sidebar-controls {
+        /* [修改] 搜尋與排序區塊 */
+        .sidebar-search-area {
             padding: 10px;
-            border-bottom: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color); /* 改為上方分隔線 */
             background-color: var(--sidebar-bg);
             display: flex;
-            flex-direction: column;
             gap: 8px;
+            align-items: center;
+            flex-shrink: 0; /* 固定高度 */
         }
 
-        .sidebar-search, .sidebar-sort {
-            width: 100%;
-            padding: 6px;
+        .sidebar-search {
+            flex: 1; /* 佔滿剩餘空間 */
+            padding: 8px;
             background: var(--input-bg);
             border: 1px solid var(--border-color);
             color: var(--text-color);
             border-radius: 4px;
         }
+
+        /* [新增] 排序按鈕樣式 */
+        .btn-sort-trigger {
+            width: 40px;
+            height: 36px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-sort-trigger:hover { background: var(--hover-bg); }
 
         .sidebar-content {
             flex: 1;
@@ -173,9 +198,11 @@
 
         .sidebar-footer {
             padding: 10px;
-            border-top: 1px solid var(--border-color);
+            /* border-top: 1px solid var(--border-color); (與搜尋區合併視覺) */
             display: flex;
             gap: 5px;
+            flex-shrink: 0;
+            padding-top: 0; /* 緊接在搜尋下方 */
         }
 
         button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; font-weight: bold; color: white; transition: 0.2s; }
@@ -230,11 +257,6 @@
         .boss-card.active span.border-anim:nth-child(3) { bottom: 0; right: -100%; width: 100%; height: var(--card-border-width); background: linear-gradient(270deg, transparent, var(--accent-color)); animation: btn-anim3 1.5s linear infinite; animation-delay: 0.75s; }
         .boss-card.active span.border-anim:nth-child(4) { bottom: -100%; left: 0; width: var(--card-border-width); height: 100%; background: linear-gradient(360deg, transparent, var(--accent-color)); animation: btn-anim4 1.5s linear infinite; animation-delay: 1.125s; }
 
-        @keyframes btn-anim1 { 0% { left: -100%; } 50%,100% { left: 100%; } }
-        @keyframes btn-anim2 { 0% { top: -100%; } 50%,100% { top: 100%; } }
-        @keyframes btn-anim3 { 0% { right: -100%; } 50%,100% { right: 100%; } }
-        @keyframes btn-anim4 { 0% { bottom: -100%; } 50%,100% { bottom: 100%; } }
-
         .boss-card.active { border-color: transparent; }
         .boss-card.expired { border-color: var(--danger-color); box-shadow: 0 0 10px rgba(244, 67, 54, 0.4); }
 
@@ -249,19 +271,10 @@
         }
         .btn-kill-header:hover { background-color: #d32f2f; }
 
-        /* [修改] 計時器置中 */
         .timer-group {
-            display: flex; 
-            flex-direction: row; 
-            align-items: center; 
-            justify-content: center; /* 水平置中 */
-            background: var(--timer-bg); 
-            padding: 5px; 
-            border-radius: 5px; 
-            margin: 2px 0;
-            z-index: 2; 
-            position: relative; 
-            min-height: 45px;
+            display: flex; flexDirection: row; alignItems: center; justifyContent: center;
+            background: var(--timer-bg); padding: 5px; border-radius: 5px; margin: 2px 0;
+            z-index: 2; position: relative; min-height: 45px;
         }
 
         .timer-display { 
@@ -282,7 +295,7 @@
         .btn-cancel:hover { background-color: #757575; }
 
         /* === 設定視窗 (Modal) === */
-        #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+        #settings-modal, #sort-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: var(--modal-bg); width: 500px; max-width: 95%; max-height: 90vh; border-radius: 8px; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         .modal-header { padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; display: flex; justify-content: space-between; }
         .modal-body { padding: 20px; overflow-y: auto; }
@@ -295,6 +308,26 @@
         .manage-list-item.drag-over { border-bottom: 3px solid var(--accent-color); }
         .manage-controls button { font-size: 0.8em; padding: 4px 8px; }
         input[type="text"] { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; width: 100%; }
+
+        /* [新增] 排序選單樣式 */
+        .sort-menu-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .sort-option {
+            padding: 12px;
+            background: var(--input-bg);
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sort-option:hover { background: var(--hover-bg); }
+        .sort-option.selected { border: 2px solid var(--accent-color); color: var(--accent-color); font-weight: bold; }
 
         /* === RWD 響應式設計 === */
         @media (max-width: 768px) {
@@ -343,18 +376,14 @@
             </div>
         </div>
 
-        <div class="sidebar-controls">
-            <input type="text" id="sidebar-search" class="sidebar-search" placeholder="🔍 搜尋魔物..." oninput="renderSidebar()">
-            <select id="sidebar-sort" class="sidebar-sort" onchange="renderSidebar()">
-                <option value="default">排序：預設</option>
-                <option value="checked-first">排序：已勾選優先</option>
-                <option value="name-asc">排序：名稱 (A → Z)</option>
-                <option value="name-desc">排序：名稱 (Z → A)</option>
-                <option value="time-asc">排序：重生時間 (短 → 長)</option>
-                <option value="time-desc">排序：重生時間 (長 → 短)</option>
-            </select>
-        </div>
         <div class="sidebar-content" id="sidebar-list"></div>
+
+        <!-- [修改] 搜尋與排序區塊 (移至底部) -->
+        <div class="sidebar-search-area">
+            <input type="text" id="sidebar-search" class="sidebar-search" placeholder="🔍 搜尋魔物..." oninput="renderSidebar()">
+            <button class="btn-sort-trigger" onclick="openSortModal()">⇅</button>
+        </div>
+
         <div class="sidebar-footer">
             <button class="btn-gray" onclick="toggleAll(true)">全選</button>
             <button class="btn-gray" onclick="toggleAll(false)">全取消</button>
@@ -365,6 +394,7 @@
         <div id="card-container"></div>
     </div>
 
+    <!-- 設定視窗 -->
     <div id="settings-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -404,17 +434,31 @@
         </div>
     </div>
 
+    <!-- [新增] 排序選單視窗 -->
+    <div id="sort-modal">
+        <div class="modal-content" style="width: 300px;">
+            <div class="modal-header">
+                <span>選擇排序方式</span>
+                <button class="btn-icon" onclick="closeSortModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="sort-menu-list">
+                    <div class="sort-option" onclick="selectSort('default')" id="sort-opt-default">預設 (新增順序)</div>
+                    <div class="sort-option" onclick="selectSort('checked-first')" id="sort-opt-checked-first">已勾選優先</div>
+                    <div class="sort-option" onclick="selectSort('name-asc')" id="sort-opt-name-asc">名稱 (A → Z)</div>
+                    <div class="sort-option" onclick="selectSort('name-desc')" id="sort-opt-name-desc">名稱 (Z → A)</div>
+                    <div class="sort-option" onclick="selectSort('time-asc')" id="sort-opt-time-asc">重生時間 (短 → 長)</div>
+                    <div class="sort-option" onclick="selectSort('time-desc')" id="sort-opt-time-desc">重生時間 (長 → 短)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let allBosses = []; 
         let visibleIds = new Set(); 
-        let settings = { 
-            notifyRespawn: false, 
-            notifyCountdown: false, 
-            notifyMin: 10,
-            floatMin: 10, 
-            lightMode: true 
-        };
-        let currentTopBossId = null; 
+        let settings = { notifyRespawn: false, notifyCountdown: false, notifyMin: 10, floatMin: 10, lightMode: true };
+        let currentSortType = 'default'; // [新增] 記錄當前排序
 
         async function init() {
             loadSettings();
@@ -446,13 +490,7 @@
             const sidebar = document.getElementById('sidebar');
             const btn = document.getElementById('toggle-btn');
             const isMobile = window.innerWidth <= 768;
-            
-            let isOpen = false;
-            if (isMobile) {
-                isOpen = sidebar.classList.contains('open');
-            } else {
-                isOpen = !sidebar.classList.contains('hidden');
-            }
+            let isOpen = isMobile ? sidebar.classList.contains('open') : !sidebar.classList.contains('hidden');
             btn.innerHTML = isOpen ? '&lt;' : '&gt;';
         }
 
@@ -501,12 +539,29 @@
             localStorage.setItem('ro_boss_settings', JSON.stringify(settings));
         }
 
+        // [修改] 排序選單邏輯
+        function openSortModal() {
+            document.getElementById('sort-modal').style.display = 'flex';
+            // 更新選中狀態
+            document.querySelectorAll('.sort-option').forEach(opt => opt.classList.remove('selected'));
+            const active = document.getElementById(`sort-opt-${currentSortType}`);
+            if (active) active.classList.add('selected');
+        }
+
+        function closeSortModal() {
+            document.getElementById('sort-modal').style.display = 'none';
+        }
+
+        function selectSort(type) {
+            currentSortType = type;
+            renderSidebar();
+            closeSortModal();
+        }
+
         function renderSidebar() {
             const list = document.getElementById('sidebar-list');
             const searchInput = document.getElementById('sidebar-search');
-            const sortSelect = document.getElementById('sidebar-sort');
             const searchText = searchInput ? searchInput.value.toLowerCase() : "";
-            const sortType = sortSelect ? sortSelect.value : "default";
 
             list.innerHTML = '';
             let displayList = [...allBosses];
@@ -515,11 +570,12 @@
                 displayList = displayList.filter(b => b.name.toLowerCase().includes(searchText));
             }
 
-            if (sortType === 'name-asc') displayList.sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
-            else if (sortType === 'name-desc') displayList.sort((a, b) => b.name.localeCompare(a.name, "zh-Hant"));
-            else if (sortType === 'time-asc') displayList.sort((a, b) => a.respawnHour - b.respawnHour);
-            else if (sortType === 'time-desc') displayList.sort((a, b) => b.respawnHour - a.respawnHour);
-            else if (sortType === 'checked-first') {
+            // 使用 currentSortType 變數
+            if (currentSortType === 'name-asc') displayList.sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
+            else if (currentSortType === 'name-desc') displayList.sort((a, b) => b.name.localeCompare(a.name, "zh-Hant"));
+            else if (currentSortType === 'time-asc') displayList.sort((a, b) => a.respawnHour - b.respawnHour);
+            else if (currentSortType === 'time-desc') displayList.sort((a, b) => b.respawnHour - a.respawnHour);
+            else if (currentSortType === 'checked-first') {
                 displayList.sort((a, b) => {
                     const aChecked = visibleIds.has(a.id) ? 1 : 0;
                     const bChecked = visibleIds.has(b.id) ? 1 : 0;
@@ -556,8 +612,7 @@
         function toggleVisibility(id, isChecked) {
             if (isChecked) visibleIds.add(id); else visibleIds.delete(id);
             localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
-            const sortType = document.getElementById('sidebar-sort').value;
-            if (sortType === 'checked-first') renderSidebar();
+            if (currentSortType === 'checked-first') renderSidebar();
             renderGrid();
         }
 
@@ -568,21 +623,9 @@
             renderGrid();
         }
 
-        function scrollToTop() {
-            const container = document.getElementById('card-container');
-            container.scrollTop = 0;
-        }
-
         function renderGrid() {
             const container = document.getElementById('card-container');
             const sortedList = getSortedBosses();
-            
-            const newTopBoss = sortedList.length > 0 ? sortedList[0] : null;
-            if (newTopBoss && currentTopBossId !== newTopBoss.id) {
-                currentTopBossId = newTopBoss.id;
-                container.scrollTop = 0; 
-            }
-
             const firstPositions = new Map();
             container.querySelectorAll('.boss-card').forEach(card => {
                 firstPositions.set(card.dataset.id, card.getBoundingClientRect());
@@ -734,7 +777,6 @@
             const endDate = new Date(boss.targetTime);
             
             const timeStr = `${pad(endDate.getHours())}:${pad(endDate.getMinutes())}`;
-            // [修改] 移除日期，僅顯示時間
             const statusStr = `[ ${timeStr} ]`;
             
             if (statusEl.innerText !== statusStr) {
@@ -761,11 +803,15 @@
                 const s = Math.floor((diff % 60000) / 1000);
                 const countDownStr = `${pad(h)}:${pad(m)}:${pad(s)}`;
                 
-                const floatMinStr = Math.floor(boss.floatSec / 60);
-                const floatSecStr = boss.floatSec % 60;
-                const floatStr = `+ ${pad(floatMinStr)}:${pad(floatSecStr)}`;
+                // [修正] 浮動時間格式：使用 settings.floatMin
+                let floatStr = "";
+                if (settings.useFloating && boss.floatSec > 0) {
+                    const floatMinStr = Math.floor(boss.floatSec / 60);
+                    const floatSecStr = boss.floatSec % 60;
+                    floatStr = ` + ${pad(floatMinStr)}:${pad(floatSecStr)}`;
+                }
                 
-                const fullTimerText = `${countDownStr} ${floatStr}`;
+                const fullTimerText = `${countDownStr}${floatStr}`;
                 
                 if (timerEl.innerText !== fullTimerText) {
                     timerEl.innerText = fullTimerText;
@@ -801,12 +847,11 @@
             const boss = allBosses.find(b => b.id === id);
             if (boss) {
                 boss.targetTime = Date.now() + (boss.respawnHour * 3600000);
-                boss.floatSec = settings.floatMin * 60; 
+                boss.floatSec = settings.useFloating ? (settings.floatMin * 60) : 0; 
                 boss.respawnNotified = false; 
                 boss.lastCountdownMin = null;
                 saveData();
                 renderGrid();
-                scrollToTop(); 
             }
         }
 
@@ -819,7 +864,6 @@
                 boss.lastCountdownMin = null;
                 saveData();
                 renderGrid();
-                scrollToTop(); 
             }
         }
 
@@ -850,7 +894,7 @@
                             killTime.setDate(killTime.getDate() - 1);
                         }
                         boss.targetTime = killTime.getTime() + (boss.respawnHour * 3600000);
-                        boss.floatSec = settings.floatMin * 60;
+                        boss.floatSec = settings.useFloating ? (settings.floatMin * 60) : 0;
                     }
                 }
                 boss.respawnNotified = false; 
@@ -859,7 +903,6 @@
                 mInput.value = '';
                 saveData();
                 renderGrid();
-                scrollToTop(); 
             }
         }
 
@@ -905,7 +948,6 @@
             renderManageList();
             renderSidebar();
             renderGrid();
-            scrollToTop();
         }
 
         function deleteMonster(index) {
@@ -990,14 +1032,7 @@
         }
 
         function toggleTheme() { settings.lightMode = document.getElementById('chk-theme').checked; applyTheme(); saveSettings(); }
-        
-        function applyTheme() { 
-            if (settings.lightMode) {
-                document.documentElement.removeAttribute('data-theme');
-            } else {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            }
-        }
+        function applyTheme() { if (settings.lightMode) document.documentElement.setAttribute('data-theme', 'light'); else document.documentElement.removeAttribute('data-theme'); }
 
         window.addEventListener('resize', updateToggleButtonIcon);
 
