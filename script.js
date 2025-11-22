@@ -10,17 +10,56 @@ let settings = {
 };
 let currentSortType = 'default';
 let currentTopBossId = null; 
+let timerWorker = null; // [新增] 用來存儲 Worker 實例
 
 async function init() {
     loadSettings();
     await loadData();
     renderSidebar();
     renderGrid();
-    setInterval(tick, 1000);
+    
+    // [修改] 不使用 setInterval(tick, 1000)，改用 Web Worker 避免背景凍結
+    startBackgroundTimer();
+
+    // [新增] 監聽網頁可見度，當使用者切換回來或解鎖螢幕時，強制立即更新一次
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === 'visible') {
+            tick();
+        }
+    });
+
     if (Notification.permission !== "granted" && Notification.permission !== "denied") {
         Notification.requestPermission();
     }
     updateToggleButtonIcon();
+}
+
+// [新增] 啟動背景計時器 (Web Worker)
+function startBackgroundTimer() {
+    // 建立一個虛擬的 Worker 代碼，讓它每秒發送一次訊號
+    const workerCode = `
+        self.onmessage = function(e) {
+            if (e.data === 'start') {
+                setInterval(() => {
+                    self.postMessage('tick');
+                }, 1000);
+            }
+        };
+    `;
+
+    // 將代碼轉為 Blob 物件
+    const blob = new Blob([workerCode], { type: "application/javascript" });
+    timerWorker = new Worker(URL.createObjectURL(blob));
+
+    // 接收 Worker 的訊號來執行 tick
+    timerWorker.onmessage = function(e) {
+        if (e.data === 'tick') {
+            tick();
+        }
+    };
+
+    // 啟動 Worker
+    timerWorker.postMessage('start');
 }
 
 function toggleSidebar() {
@@ -673,6 +712,7 @@ function exportData() {
     a.click();
 }
 
+// [修改] 匯入合併邏輯：名稱相同更新時間
 function importData(input) {
     const file = input.files[0];
     if (!file) return;
@@ -690,11 +730,13 @@ function importData(input) {
                 if (item.name && item.respawnHour !== undefined) {
                     const existing = allBosses.find(b => b.name === item.name);
                     if (existing) {
+                        // 更新
                         if (existing.respawnHour !== Number(item.respawnHour)) {
                             existing.respawnHour = Number(item.respawnHour);
                             updatedCount++;
                         }
                     } else {
+                        // 新增
                         maxId++;
                         allBosses.push({
                             id: maxId,
