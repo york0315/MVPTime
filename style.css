@@ -42,6 +42,7 @@ body {
     color: var(--text-color);
     margin: 0;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     overflow: hidden;
     transition: background 0.3s, color 0.3s;
@@ -61,18 +62,18 @@ body {
     overflow: visible;
 }
 
-/* 側邊欄開關按鈕 - 完美貼底 */
+/* 側邊欄開關按鈕 - 貼底 */
 .sidebar-toggle-tab {
     position: absolute;
     top: auto;
-    bottom: 0; /* 緊貼底部 */
+    bottom: 0; 
     left: 100%;
     width: 24px;
     height: 80px;
     background-color: var(--sidebar-bg);
     border: 1px solid var(--border-color);
     border-left: none;
-    border-radius: 0 8px 8px 0; /* 調整圓角 */
+    border-radius: 0 8px 8px 0;
     color: var(--text-muted);
     cursor: pointer;
     display: flex;
@@ -232,7 +233,6 @@ button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; f
 /* === 卡片樣式 === */
 .boss-card {
     background-color: var(--card-bg);
-    /* 預設灰色邊框 */
     border: var(--card-border-width) solid #666;
     border-radius: 8px;
     padding: 12px;
@@ -248,11 +248,10 @@ button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; f
     height: auto;
 }
 
-/* [修復] 綠色流光動畫 */
 span.border-anim { 
     position: absolute; 
     display: none; 
-    z-index: 1; /* 確保在背景之上 */
+    z-index: 1; 
 }
 .boss-card.active span.border-anim { display: block; }
 
@@ -266,14 +265,8 @@ span.border-anim {
 @keyframes btn-anim3 { 0% { right: -100%; } 50%,100% { right: 100%; } }
 @keyframes btn-anim4 { 0% { bottom: -100%; } 50%,100% { bottom: 100%; } }
 
-/* [修復] 強制隱藏原本邊框，讓動畫顯示 */
-.boss-card.active { 
-    border-color: transparent !important; 
-}
-.boss-card.expired { 
-    border-color: var(--danger-color) !important; 
-    box-shadow: 0 0 10px rgba(244, 67, 54, 0.4); 
-}
+.boss-card.active { border-color: transparent !important; }
+.boss-card.expired { border-color: var(--danger-color) !important; box-shadow: 0 0 10px rgba(244, 67, 54, 0.4); }
 
 .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 5px; position: relative; z-index: 2; }
 .header-left { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; flex: 1; }
@@ -286,32 +279,30 @@ span.border-anim {
 }
 .btn-kill-header:hover { background-color: #d32f2f; }
 
+/* [修正] 計時器樣式 */
 .timer-group {
     display: flex; 
     flex-direction: row; 
     align-items: center; 
-    justify-content: center; 
+    justify-content: center; /* 水平置中 */
     background: var(--timer-bg); 
-    padding: 5px; 
+    padding: 10px 0; /* 上下增加間距，移除 min-height */
     border-radius: 5px; 
     margin: 2px 0;
     z-index: 2; 
     position: relative; 
-    min-height: 45px;
 }
 
-/* [修復] 計時器文字置中與寬度 */
 .timer-display { 
     font-size: 1.7em; 
     font-family: monospace; 
     font-weight: bold; 
     color: var(--timer-color); 
     margin: 0; 
-    line-height: 1; 
+    line-height: normal; /* 使用自然行高，避免被切到 */
     letter-spacing: -0.5px; 
     text-align: center; 
-    width: 100%; /* 確保佔滿寬度以置中 */
-    flex: 1; /* Flex 撐開 */
+    width: 100%; /* 強制佔滿 */
 }
 
 .correction-area { 
