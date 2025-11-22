@@ -2,7 +2,7 @@
 <html lang="zh-TW" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RO BOSS計時器 Pro</title>
     <style>
         /* === CSS 變數定義 === */
@@ -20,7 +20,7 @@
             --accent-color: #4CAF50;
             --danger-color: #f44336;
             --card-border-width: 3px;
-            --card-width: 320px; /* 卡片固定寬度 */
+            --card-width: 320px; /* 電腦版卡片固定寬度 */
         }
 
         [data-theme="dark"] {
@@ -57,22 +57,21 @@
             flex-shrink: 0;
             z-index: 30;
             transition: transform 0.3s ease, margin-left 0.3s ease;
-            position: relative; /* 讓按鈕可以定位在旁邊 */
-            overflow: visible;  /* 關鍵：讓凸出去的按鈕顯示出來 */
+            position: relative;
+            overflow: visible;
         }
 
-        /* === [新增] 緊貼側邊欄的長條開關鈕 === */
         .sidebar-toggle-tab {
             position: absolute;
-            top: 50%;            /* 垂直置中 */
-            left: 100%;          /* 黏在側邊欄右邊緣 */
+            top: 50%;
+            left: 100%;
             transform: translateY(-50%);
             width: 24px;
-            height: 80px;        /* 長條狀 */
+            height: 80px;
             background-color: var(--sidebar-bg);
             border: 1px solid var(--border-color);
-            border-left: none;   /* 移除左邊框讓視覺融合 */
-            border-radius: 0 8px 8px 0; /* 右側圓角 */
+            border-left: none;
+            border-radius: 0 8px 8px 0;
             color: var(--text-muted);
             cursor: pointer;
             display: flex;
@@ -89,7 +88,6 @@
             color: var(--accent-color);
         }
 
-        /* 手機版遮罩 */
         #sidebar-overlay {
             display: none;
             position: fixed;
@@ -200,13 +198,10 @@
             overflow-y: auto;
             padding: 20px;
             display: grid;
-            /* [修改] 卡片固定寬度邏輯 */
-            /* 原本是 minmax(300px, 1fr) 會自動拉寬 */
-            /* 現在改為固定 320px，瀏覽器會自動計算能放幾張 */
+            /* 電腦版預設：固定寬度，自動填滿 */
             grid-template-columns: repeat(auto-fill, var(--card-width));
             gap: 20px;
             align-content: start;
-            /* 讓卡片群組置左，若要置中可改為 center */
             justify-content: start; 
         }
 
@@ -224,8 +219,9 @@
             transition: box-shadow 0.3s;
             overflow: hidden;
             will-change: transform;
-            /* 確保卡片不會因為 container 寬度變化而擠壓 */
             width: var(--card-width); 
+            /* 確保最小高度，避免內容擠壓時高度消失 */
+            min-height: 240px; 
         }
 
         span.border-anim { position: absolute; display: none; }
@@ -251,11 +247,47 @@
         .timer-display { text-align: center; font-size: 1.8em; font-family: monospace; font-weight: bold; color: #ffd700; margin: 5px 0; background: #222; border-radius: 5px; padding: 5px; z-index: 2; position: relative; }
         [data-theme="light"] .timer-display { background: #333; }
 
-        .correction-area { background-color: var(--input-bg); padding: 8px; border-radius: 5px; display: flex; align-items: center; gap: 5px; z-index: 2; position: relative; }
-        .correction-area label { white-space: nowrap; font-size: 0.9em; }
-        .correction-area input[type="number"] { flex: 1; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; min-width: 0; text-align: center; }
+        .correction-area { 
+            background-color: var(--input-bg); 
+            padding: 8px; 
+            border-radius: 5px; 
+            display: flex; 
+            align-items: center; 
+            gap: 5px; 
+            z-index: 2; 
+            position: relative; 
+        }
         
-        .btn-update { background-color: #2196F3; font-size: 0.8em; white-space: nowrap; padding: 6px 12px; flex-shrink: 0; }
+        /* [新增] 模式選擇下拉選單 */
+        .mode-select {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+
+        .correction-area input[type="number"] { 
+            flex: 1; 
+            background: var(--bg-color); 
+            border: 1px solid var(--border-color); 
+            color: var(--text-color); 
+            padding: 5px; 
+            border-radius: 3px; 
+            min-width: 0; 
+            text-align: center; 
+        }
+        
+        .btn-update { 
+            background-color: #2196F3; 
+            font-size: 0.8em; 
+            white-space: nowrap; 
+            padding: 6px 12px; 
+            flex-shrink: 0; 
+        }
+        
         .btn-kill { background-color: var(--danger-color); width: 100%; font-size: 1em; padding: 10px; margin-top: auto; z-index: 2; position: relative; cursor: pointer; }
         .btn-kill:hover { background-color: #d32f2f; }
 
@@ -274,31 +306,34 @@
         .manage-controls button { font-size: 0.8em; padding: 4px 8px; }
         input[type="text"] { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; width: 100%; }
 
-        /* === RWD 響應式設計 === */
-        /* 手機版 (< 768px) */
+        /* === RWD 響應式設計 (Mobile Fix) === */
         @media (max-width: 768px) {
             #sidebar {
                 position: fixed;
-                left: -280px; /* 隱藏 */
+                left: -280px;
                 top: 0;
                 bottom: 0;
                 height: 100%;
                 box-shadow: 2px 0 10px rgba(0,0,0,0.5);
             }
             #sidebar.open {
-                transform: translateX(280px); /* 滑出 */
+                transform: translateX(280px);
             }
-            .sidebar-toggle-tab {
-                /* 手機版若左側隱藏，按鈕會在螢幕最左邊 */
-                /* 因為按鈕是 left: 100%，所以 left: -280px + 280px = 0 (剛好在邊緣) */
-                /* 我們直接讓它正常顯示即可，邏輯通用 */
+            
+            /* [修復] 手機版改為單欄，寬度 100% */
+            #card-container {
+                grid-template-columns: 1fr; /* 強制一欄 */
+                padding: 10px;
+            }
+            .boss-card {
+                width: 100%; /* 填滿容器 */
+                max-width: none; /* 移除任何最大寬度限制 */
             }
         }
         
-        /* 電腦版 (>= 769px) */
         @media (min-width: 769px) {
             #sidebar.hidden {
-                margin-left: -280px; /* 收合 */
+                margin-left: -280px;
             }
         }
 
@@ -306,22 +341,14 @@
 </head>
 <body>
 
-    <!-- 手機版遮罩 -->
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <!-- 左側選單 -->
     <div id="sidebar">
-        
-        <!-- [新增] 緊貼側邊欄的長條開關鈕 -->
-        <div class="sidebar-toggle-tab" onclick="toggleSidebar()" id="toggle-btn">
-            &lt; <!-- 預設顯示 < (代表可收起) -->
-        </div>
-
+        <div class="sidebar-toggle-tab" onclick="toggleSidebar()" id="toggle-btn">&lt;</div>
         <div class="sidebar-header">
             <span>BOSS計時器</span>
             <button class="btn-icon" onclick="openSettings()" title="設定">⚙️</button>
         </div>
-        
         <div class="sidebar-controls">
             <input type="text" id="sidebar-search" class="sidebar-search" placeholder="🔍 搜尋魔物..." oninput="renderSidebar()">
             <select id="sidebar-sort" class="sidebar-sort" onchange="renderSidebar()">
@@ -332,7 +359,6 @@
                 <option value="time-asc">排序：重生時間 (短 → 長)</option>
             </select>
         </div>
-
         <div class="sidebar-content" id="sidebar-list"></div>
         <div class="sidebar-footer">
             <button class="btn-gray" onclick="toggleAll(true)">全選</button>
@@ -340,12 +366,10 @@
         </div>
     </div>
 
-    <!-- 右側內容 -->
     <div id="main-content">
         <div id="card-container"></div>
     </div>
 
-    <!-- 設定視窗 -->
     <div id="settings-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -364,7 +388,6 @@
                         使用淺色模式 (Light Mode) - 預設開啟
                     </label>
                 </div>
-
                 <div class="modal-section">
                     <h3>資料管理</h3>
                     <div style="display:flex; gap:10px;">
@@ -373,7 +396,6 @@
                         <button class="btn-gray" onclick="exportData()">匯出清單 (.json)</button>
                     </div>
                 </div>
-
                 <div class="modal-section">
                     <h3>新增魔物</h3>
                     <div style="display:flex; gap:10px;">
@@ -382,9 +404,8 @@
                         <button class="btn-update" onclick="addNewMonster()">新增</button>
                     </div>
                 </div>
-
                 <div class="modal-section">
-                    <h3>管理與排序清單 (拖曳可調整順序)</h3>
+                    <h3>管理與排序清單</h3>
                     <div id="manage-list-container"></div>
                 </div>
             </div>
@@ -405,7 +426,7 @@
             if (Notification.permission !== "granted" && Notification.permission !== "denied") {
                 Notification.requestPermission();
             }
-            updateToggleButtonIcon(); // 初始化按鈕符號
+            updateToggleButtonIcon();
         }
 
         function toggleSidebar() {
@@ -419,7 +440,6 @@
             } else {
                 sidebar.classList.toggle('hidden');
             }
-            
             updateToggleButtonIcon();
         }
 
@@ -434,8 +454,6 @@
             } else {
                 isOpen = !sidebar.classList.contains('hidden');
             }
-
-            // 如果開啟狀態，顯示 < (收起)，否則顯示 > (展開)
             btn.innerHTML = isOpen ? '&lt;' : '&gt;';
         }
 
@@ -482,25 +500,20 @@
             const list = document.getElementById('sidebar-list');
             const searchInput = document.getElementById('sidebar-search');
             const sortSelect = document.getElementById('sidebar-sort');
-            
             const searchText = searchInput ? searchInput.value.toLowerCase() : "";
             const sortType = sortSelect ? sortSelect.value : "default";
 
             list.innerHTML = '';
-            
             let displayList = [...allBosses];
 
             if (searchText) {
                 displayList = displayList.filter(b => b.name.toLowerCase().includes(searchText));
             }
 
-            if (sortType === 'name-asc') {
-                displayList.sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
-            } else if (sortType === 'name-desc') {
-                displayList.sort((a, b) => b.name.localeCompare(a.name, "zh-Hant"));
-            } else if (sortType === 'time-asc') {
-                displayList.sort((a, b) => a.respawnHour - b.respawnHour);
-            } else if (sortType === 'checked-first') {
+            if (sortType === 'name-asc') displayList.sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
+            else if (sortType === 'name-desc') displayList.sort((a, b) => b.name.localeCompare(a.name, "zh-Hant"));
+            else if (sortType === 'time-asc') displayList.sort((a, b) => a.respawnHour - b.respawnHour);
+            else if (sortType === 'checked-first') {
                 displayList.sort((a, b) => {
                     const aChecked = visibleIds.has(a.id) ? 1 : 0;
                     const bChecked = visibleIds.has(b.id) ? 1 : 0;
@@ -526,10 +539,7 @@
                 
                 const label = document.createElement('label');
                 label.className = 'sidebar-label';
-                label.innerHTML = `
-                    <span class="time-badge">(${boss.respawnHour}H)</span>
-                    <span class="name-text">${boss.name}</span>
-                `;
+                label.innerHTML = `<span class="time-badge">(${boss.respawnHour}H)</span><span class="name-text">${boss.name}</span>`;
 
                 div.appendChild(checkbox);
                 div.appendChild(label);
@@ -541,9 +551,7 @@
             if (isChecked) visibleIds.add(id); else visibleIds.delete(id);
             localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
             const sortType = document.getElementById('sidebar-sort').value;
-            if (sortType === 'checked-first') {
-                renderSidebar();
-            }
+            if (sortType === 'checked-first') renderSidebar();
             renderGrid();
         }
 
@@ -557,12 +565,10 @@
         function renderGrid() {
             const container = document.getElementById('card-container');
             const sortedList = getSortedBosses();
-            
             const firstPositions = new Map();
             container.querySelectorAll('.boss-card').forEach(card => {
                 firstPositions.set(card.dataset.id, card.getBoundingClientRect());
             });
-
             const existingCards = {};
             container.querySelectorAll('.boss-card').forEach(c => existingCards[c.dataset.id] = c);
 
@@ -590,14 +596,23 @@
                         card.animate([
                             { transform: `translate(${deltaX}px, ${deltaY}px)` },
                             { transform: 'none' }
-                        ], {
-                            duration: 400,
-                            easing: 'cubic-bezier(0.2, 0, 0.2, 1)',
-                            fill: 'both'
-                        });
+                        ], { duration: 400, easing: 'cubic-bezier(0.2, 0, 0.2, 1)', fill: 'both' });
                     }
                 }
             });
+        }
+
+        // [修改] 變更 placeholder 的輔助函數
+        function updatePlaceholder(id, mode) {
+            const hInput = document.getElementById(`h-${id}`);
+            const mInput = document.getElementById(`m-${id}`);
+            if (mode === 'remaining') {
+                hInput.placeholder = "時";
+                mInput.placeholder = "分";
+            } else {
+                hInput.placeholder = "點";
+                mInput.placeholder = "分";
+            }
         }
 
         function createCardElement(boss) {
@@ -620,9 +635,13 @@
                 <div class="timer-display" id="timer-${boss.id}">--:--:--</div>
                 
                 <div class="correction-area">
-                    <label>修正:</label>
-                    <input type="number" id="h-${boss.id}" placeholder="時" min="0">
-                    <input type="number" id="m-${boss.id}" placeholder="分" min="0">
+                    <!-- [新增] 模式選擇 -->
+                    <select id="mode-${boss.id}" class="mode-select" onchange="updatePlaceholder(${boss.id}, this.value)">
+                        <option value="remaining">剩餘</option>
+                        <option value="killed">擊殺</option>
+                    </select>
+                    <input type="number" id="h-${boss.id}" placeholder="時" min="0" max="23">
+                    <input type="number" id="m-${boss.id}" placeholder="分" min="0" max="59">
                     <button class="btn-update" onclick="manualUpdate(${boss.id})">更新</button>
                 </div>
                 <button class="btn-kill" onclick="killBoss(${boss.id})">擊殺</button>
@@ -645,24 +664,20 @@
         function tick() {
             const now = Date.now();
             let needsReorder = false;
-
             allBosses.forEach(boss => {
                 if (boss.targetTime) {
                     const diff = boss.targetTime - now;
                     const timeoutLimit = -(boss.respawnHour * 3600000);
-
                     if (diff <= timeoutLimit) {
                         boss.targetTime = null;
                         needsReorder = true;
                     }
                 }
             });
-
             if (needsReorder) {
                 saveData();
                 renderGrid(); 
             }
-
             document.querySelectorAll('.boss-card').forEach(card => {
                 const id = parseInt(card.dataset.id);
                 const boss = allBosses.find(b => b.id === id);
@@ -735,17 +750,47 @@
             }
         }
 
+        // [修改] manualUpdate 支援兩種模式
         function manualUpdate(id) {
             const boss = allBosses.find(b => b.id === id);
-            const h = parseInt(document.getElementById(`h-${id}`).value) || 0;
-            const m = parseInt(document.getElementById(`m-${id}`).value) || 0;
-            const isEmpty = document.getElementById(`h-${id}`).value === "" && document.getElementById(`m-${id}`).value === "";
+            const mode = document.getElementById(`mode-${id}`).value;
+            const hInput = document.getElementById(`h-${id}`);
+            const mInput = document.getElementById(`m-${id}`);
+            
+            let h = parseInt(hInput.value);
+            let m = parseInt(mInput.value);
+            
+            // 如果未輸入，預設為 0
+            if (isNaN(h)) h = 0;
+            if (isNaN(m)) m = 0;
+
+            const isEmpty = hInput.value === "" && mInput.value === "";
 
             if (boss) {
-                if (isEmpty && h === 0 && m === 0) boss.targetTime = null;
-                else boss.targetTime = Date.now() + (h * 3600000) + (m * 60000);
-                document.getElementById(`h-${id}`).value = '';
-                document.getElementById(`m-${id}`).value = '';
+                if (isEmpty && h === 0 && m === 0) {
+                    boss.targetTime = null;
+                } else {
+                    if (mode === 'remaining') {
+                        // 模式 1: 剩餘 (現在 + 輸入時間)
+                        boss.targetTime = Date.now() + (h * 3600000) + (m * 60000);
+                    } else {
+                        // 模式 2: 擊殺 (指定時間)
+                        const now = new Date();
+                        let killTime = new Date();
+                        killTime.setHours(h, m, 0, 0); // 設定為今天的 H:M
+
+                        // 如果設定的時間大於現在時間 (例如現在 12:00，輸入 15:00)，判斷為昨天
+                        if (killTime > now) {
+                            killTime.setDate(killTime.getDate() - 1);
+                        }
+
+                        // 目標時間 = 擊殺時間 + 重生CD
+                        boss.targetTime = killTime.getTime() + (boss.respawnHour * 3600000);
+                    }
+                }
+                
+                hInput.value = '';
+                mInput.value = '';
                 saveData();
                 renderGrid();
             }
@@ -856,7 +901,6 @@
         function toggleTheme() { settings.lightMode = document.getElementById('chk-theme').checked; applyTheme(); saveSettings(); }
         function applyTheme() { if (settings.lightMode) document.documentElement.setAttribute('data-theme', 'light'); else document.documentElement.removeAttribute('data-theme'); }
 
-        // 視窗大小改變時，可能需要更新按鈕符號
         window.addEventListener('resize', updateToggleButtonIcon);
 
         init();
