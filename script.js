@@ -14,9 +14,12 @@ let timerWorker = null;
 
 async function init() {
     loadSettings();
+    // [新增] 讀取排序設定
+    const savedSort = localStorage.getItem('ro_boss_sort');
+    if (savedSort) currentSortType = savedSort;
+
     await loadData();
     
-    // [新增] 檢查是否為分享連結
     checkShareUrl();
 
     renderSidebar();
@@ -36,7 +39,7 @@ async function init() {
     updateToggleButtonIcon();
 }
 
-// [新增] 產生分享連結
+// ... (中間的函數 generateShareLink, checkShareUrl, startBackgroundTimer, toggleSidebar, updateToggleButtonIcon, loadData, syncDefaultMonsters, saveData, loadSettings, toggleRespawnSettings, saveSettings, openSortModal, closeSortModal 保持不變) ...
 function generateShareLink() {
     const activeTimers = allBosses
         .filter(b => b.targetTime !== null)
@@ -63,7 +66,6 @@ function generateShareLink() {
     });
 }
 
-// [新增] 檢查並讀取分享連結
 function checkShareUrl() {
     const params = new URLSearchParams(window.location.search);
     const shareData = params.get('share');
@@ -280,13 +282,14 @@ function closeSortModal() {
     document.getElementById('sort-modal').style.display = 'none';
 }
 
+// [修改] 排序選擇後儲存設定
 function selectSort(type) {
     currentSortType = type;
+    localStorage.setItem('ro_boss_sort', type); // 儲存排序偏好
     renderSidebar();
     closeSortModal();
 }
 
-// 時間格式化工具 (小數轉時分)
 function formatRespawnTime(hours) {
     const h = Math.floor(hours);
     const m = Math.round((hours - h) * 60);
@@ -789,7 +792,6 @@ function exportData() {
     a.click();
 }
 
-// [修改] 匯入合併邏輯：名稱相同更新時間
 function importData(input) {
     const file = input.files[0];
     if (!file) return;
@@ -807,13 +809,11 @@ function importData(input) {
                 if (item.name && item.respawnHour !== undefined) {
                     const existing = allBosses.find(b => b.name === item.name);
                     if (existing) {
-                        // 更新
                         if (existing.respawnHour !== Number(item.respawnHour)) {
                             existing.respawnHour = Number(item.respawnHour);
                             updatedCount++;
                         }
                     } else {
-                        // 新增
                         maxId++;
                         allBosses.push({
                             id: maxId,
