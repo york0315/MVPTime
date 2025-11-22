@@ -112,7 +112,7 @@ async function syncDefaultMonsters(isFirstLoad = false) {
                     allBosses.push({
                         id: maxId,
                         name: def.name,
-                        respawnHour: def.respawnHour,
+                        respawnHour: Number(def.respawnHour),
                         targetTime: null,
                         floatSec: 0,
                         respawnNotified: false,
@@ -211,6 +211,18 @@ function selectSort(type) {
     closeSortModal();
 }
 
+// [新增] 時間格式化工具 (小數轉時分)
+function formatRespawnTime(hours) {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    
+    if (m === 0) {
+        return `${h}H`;
+    } else {
+        return `${h}H ${m}M`;
+    }
+}
+
 function renderSidebar() {
     const list = document.getElementById('sidebar-list');
     const searchInput = document.getElementById('sidebar-search');
@@ -254,7 +266,8 @@ function renderSidebar() {
         
         const label = document.createElement('label');
         label.className = 'sidebar-label';
-        label.innerHTML = `<span class="time-badge">(${boss.respawnHour}H)</span><span class="name-text">${boss.name}</span>`;
+        // [修改] 使用格式化函數
+        label.innerHTML = `<span class="time-badge">(${formatRespawnTime(boss.respawnHour)})</span><span class="name-text">${boss.name}</span>`;
 
         div.appendChild(checkbox);
         div.appendChild(label);
@@ -350,6 +363,7 @@ function createCardElement(boss) {
     card.dataset.id = boss.id;
     card.id = `card-${boss.id}`;
     
+    // [修改] 卡片標題時間也使用格式化函數
     card.innerHTML = `
         <span class="border-anim"></span>
         <span class="border-anim"></span>
@@ -358,7 +372,7 @@ function createCardElement(boss) {
 
         <div class="card-header">
             <div class="header-left">
-                <span class="boss-duration">[${boss.respawnHour}H]</span>
+                <span class="boss-duration">[${formatRespawnTime(boss.respawnHour)}]</span>
                 <span class="boss-name">${boss.name}</span>
                 <span class="status-display" id="status-${boss.id}"></span>
             </div>
@@ -655,12 +669,13 @@ function renderManageList() {
         item.draggable = true;
         item.dataset.index = index;
         
+        // [修改] 管理清單也顯示格式化後的時間
         item.innerHTML = `
             <div class="manage-left">
                 <input type="checkbox" class="sidebar-visibility-chk" 
                        ${boss.onSidebar !== false ? 'checked' : ''} 
                        onclick="toggleBossInSidebar(${index})" title="顯示於側邊欄">
-                <span>${boss.name}</span>
+                <span>${boss.name} <small style="color:#888;">(${formatRespawnTime(boss.respawnHour)})</small></span>
             </div>
             <div class="manage-controls">
                 <button onclick="deleteMonster(${index})" style="background:#f44336;">✕</button>
@@ -702,7 +717,6 @@ function exportData() {
     a.click();
 }
 
-// [修改] 匯入合併邏輯：名稱相同更新時間
 function importData(input) {
     const file = input.files[0];
     if (!file) return;
@@ -720,13 +734,11 @@ function importData(input) {
                 if (item.name && item.respawnHour !== undefined) {
                     const existing = allBosses.find(b => b.name === item.name);
                     if (existing) {
-                        // 更新
                         if (existing.respawnHour !== Number(item.respawnHour)) {
                             existing.respawnHour = Number(item.respawnHour);
                             updatedCount++;
                         }
                     } else {
-                        // 新增
                         maxId++;
                         allBosses.push({
                             id: maxId,
