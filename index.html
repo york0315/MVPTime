@@ -219,17 +219,15 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            /* [修改] 縮小內部間距 */
+            gap: 4px; 
             position: relative;
             transition: box-shadow 0.3s;
             will-change: transform;
             width: var(--card-width); 
-            overflow: hidden; /* 保持圓角 */
-            
-            /* [修改] 卡片高度與佈局控制 */
-            height: auto; /* 自動高度 */
-            min-height: 280px; /* 設定最小高度，防止手機版塌陷 */
-            justify-content: space-between; /* 內容撐開 */
+            overflow: hidden;
+            height: auto;
+            padding-bottom: 15px;
         }
 
         span.border-anim { position: absolute; display: none; }
@@ -247,7 +245,7 @@
         .boss-card.active { border-color: transparent; }
         .boss-card.expired { border-color: var(--danger-color); box-shadow: 0 0 10px rgba(244, 67, 54, 0.4); }
 
-        .card-header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 5px; }
+        .card-header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--border-color); padding-bottom: 3px; margin-bottom: 3px; }
         .boss-name { font-size: 1.3em; font-weight: bold; }
         .respawn-time-hint { font-size: 0.9em; color: var(--text-muted); }
 
@@ -258,9 +256,10 @@
             justify-content: center;
             gap: 10px;
             background: var(--timer-bg);
-            padding: 8px;
+            /* [修改] 縮小 padding 與 margin */
+            padding: 5px; 
             border-radius: 5px;
-            margin: 5px 0;
+            margin: 2px 0;
             z-index: 2;
             position: relative;
         }
@@ -284,14 +283,15 @@
 
         .correction-area { 
             background-color: var(--input-bg); 
-            padding: 8px; 
+            /* [修改] 縮小 padding 與 margin */
+            padding: 5px; 
             border-radius: 5px; 
             display: flex; 
             align-items: center; 
             gap: 5px; 
             z-index: 2; 
             position: relative; 
-            margin-bottom: 10px; /* 增加底部間距，避免貼著按鈕 */
+            margin-bottom: 4px; /* 讓底部按鈕更貼近 */
         }
         
         .mode-select {
@@ -315,39 +315,46 @@
             text-align: center; 
         }
         
+        /* 更新按鈕 */
         .btn-update { 
             background-color: #2196F3; 
             font-size: 0.8em; 
             white-space: nowrap; 
             padding: 6px 12px; 
             flex-shrink: 0; 
+            font-weight: bold;
         }
         
         .card-actions {
             display: flex;
             gap: 10px;
-            /* margin-top: auto;  (由父層 space-between 控制) */
             z-index: 2;
             position: relative;
         }
 
+        /* [修改] 擊殺按鈕 (字體大小調整) */
         .btn-kill { 
             background-color: var(--danger-color); 
             flex: 1;
-            font-size: 1em; 
-            padding: 12px; 
+            /* [修改] 字體與 btn-update 一致 */
+            font-size: 0.8em; 
+            font-weight: bold;
+            padding: 10px; 
             cursor: pointer; 
             border-radius: 4px; 
             color: white;
         }
         .btn-kill:hover { background-color: #d32f2f; }
 
+        /* [修改] 取消按鈕 (字體大小調整) */
         .btn-cancel {
             background-color: #9e9e9e;
             flex: 0 0 auto;
             min-width: 60px;
-            font-size: 1em;
-            padding: 12px;
+            /* [修改] 字體與 btn-update 一致 */
+            font-size: 0.8em;
+            font-weight: bold;
+            padding: 10px;
             cursor: pointer;
             border-radius: 4px;
             color: white;
@@ -386,15 +393,13 @@
             #card-container {
                 grid-template-columns: 1fr;
                 padding: 10px;
-                /* 確保 Grid Row 高度自動適應 */
                 grid-auto-rows: min-content;
             }
             .boss-card {
                 width: 100%;
                 max-width: none;
-                /* [修正] 手機版確保高度有彈性但有最小值 */
                 height: auto;
-                min-height: 280px; 
+                min-height: 240px; /* 調整手機版最小高度 */
             }
         }
         
@@ -688,6 +693,7 @@
             card.className = 'boss-card';
             card.dataset.id = boss.id;
             card.id = `card-${boss.id}`;
+            
             card.innerHTML = `
                 <span class="border-anim"></span>
                 <span class="border-anim"></span>
@@ -849,8 +855,10 @@
                     boss.targetTime = null;
                 } else {
                     if (mode === 'remaining') {
+                        // 剩餘模式：目前時間 + 輸入時間 + 1分鐘
                         boss.targetTime = Date.now() + (h * 3600000) + (m * 60000) + 60000;
                     } else {
+                        // 擊殺模式：指定擊殺時間 + 重生CD + 10分鐘
                         const now = new Date();
                         let killTime = new Date();
                         killTime.setHours(h, m, 0, 0);
@@ -881,7 +889,7 @@
             allBosses.push({ id: newId, name: name, respawnHour: time, targetTime: null });
             visibleIds.add(newId);
             saveData();
-            // [修正] 立即儲存勾選狀態
+            // 立即儲存勾選狀態
             localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
             
             document.getElementById('new-name').value = '';
