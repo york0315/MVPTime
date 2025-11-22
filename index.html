@@ -6,8 +6,9 @@
     <title>MVP儀表板</title>
     <style>
         /* === CSS 變數定義 === */
+        
+        /* 1. 預設 (淺色模式 Light Mode) - 定義在 :root */
         :root {
-            /* 淺色模式 (Light Mode) */
             --bg-color: #f0f2f5;
             --sidebar-bg: #ffffff;
             --card-bg: #ffffff;
@@ -26,8 +27,8 @@
             --card-width: 320px; 
         }
 
-        /* 深色模式 (Dark Mode) */
-        [data-theme="dark"] {
+        /* 2. 深色模式 (Dark Mode) - 使用更高權重的選擇器 html[data-theme="dark"] */
+        html[data-theme="dark"] {
             --bg-color: #1e1e1e;
             --sidebar-bg: #252526;
             --card-bg: #2d2d2d;
@@ -67,7 +68,7 @@
             overflow: visible;
         }
 
-        /* [修改] 側邊欄開關按鈕 - 貼底 */
+        /* 側邊欄開關按鈕 - 貼底 */
         .sidebar-toggle-tab {
             position: absolute;
             top: auto;
@@ -78,7 +79,6 @@
             background-color: var(--sidebar-bg);
             border: 1px solid var(--border-color);
             border-left: none;
-            /* 右上圓角，右下直角 (貼底) */
             border-radius: 0 8px 0 0; 
             color: var(--text-muted);
             cursor: pointer;
@@ -268,12 +268,12 @@
         }
         .btn-kill-header:hover { background-color: #d32f2f; }
 
-        /* [修改] 計時器容器與文字置中 */
+        /* 計時器區塊 */
         .timer-group {
             display: flex; 
             flex-direction: row; 
             align-items: center; 
-            justify-content: center; /* Flex 水平置中 */
+            justify-content: center; /* 置中 */
             background: var(--timer-bg); 
             padding: 5px; 
             border-radius: 5px; 
@@ -291,7 +291,6 @@
             margin: 0;
             line-height: 1;
             letter-spacing: -0.5px; 
-            /* 強制文字置中 */
             text-align: center; 
             width: 100%; 
         }
@@ -325,22 +324,8 @@
         input[type="text"] { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; width: 100%; }
 
         /* 排序選單樣式 */
-        .sort-menu-list {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        .sort-option {
-            padding: 12px;
-            background: var(--input-bg);
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .sort-menu-list { display: flex; flex-direction: column; gap: 5px; }
+        .sort-option { padding: 12px; background: var(--input-bg); border-radius: 5px; cursor: pointer; font-size: 1em; transition: background 0.2s; display: flex; justify-content: space-between; align-items: center; }
         .sort-option:hover { background: var(--hover-bg); }
         .sort-option.selected { border: 2px solid var(--accent-color); color: var(--accent-color); font-weight: bold; }
 
@@ -372,8 +357,8 @@
         </div>
 
         <div class="sidebar-notify-settings">
-            <!-- [修改] 補上浮動時間的 checkbox -->
             <div class="notify-row">
+                <!-- 浮動時間 Checkbox -->
                 <label><input type="checkbox" id="chk-use-float" onchange="saveSettings(); renderGrid();"> 浮動時間</label>
                 <div class="notify-input-group">
                     <input type="number" id="inp-float-min" value="10" min="0" max="60" onchange="saveSettings(); renderGrid();">
@@ -384,10 +369,10 @@
                 <label><input type="checkbox" id="chk-notify-respawn" onchange="toggleRespawnSettings()"> 重生通知</label>
             </div>
             <div class="notify-row">
+                <!-- 倒數通知文字修正 -->
                 <label id="lbl-notify-countdown"><input type="checkbox" id="chk-notify-countdown" onchange="saveSettings()"> 倒數通知</label>
                 <div class="notify-input-group">
                     <input type="number" id="inp-notify-min" value="3" min="1" max="60" onchange="saveSettings()">
-                    <!-- [修改] 移除 "前" -->
                     <span>分</span>
                 </div>
             </div>
@@ -450,7 +435,7 @@
         </div>
     </div>
 
-    <!-- 排序選單視窗 -->
+    <!-- 排序選單 -->
     <div id="sort-modal">
         <div class="modal-content" style="width: 300px;">
             <div class="modal-header">
@@ -550,7 +535,7 @@
             document.getElementById('chk-notify-respawn').checked = settings.notifyRespawn;
             document.getElementById('chk-notify-countdown').checked = settings.notifyCountdown;
             document.getElementById('inp-notify-min').value = settings.notifyMin;
-            document.getElementById('inp-float-min').value = settings.floatMin;
+            document.getElementById('inp-float-min').value = settings.floatMin || 10; 
             document.getElementById('chk-use-float').checked = settings.useFloating !== false; 
             document.getElementById('chk-theme').checked = settings.lightMode;
             
@@ -1095,7 +1080,14 @@
         }
 
         function toggleTheme() { settings.lightMode = document.getElementById('chk-theme').checked; applyTheme(); saveSettings(); }
-        function applyTheme() { if (settings.lightMode) document.documentElement.setAttribute('data-theme', 'light'); else document.documentElement.removeAttribute('data-theme'); }
+        
+        function applyTheme() { 
+            if (settings.lightMode) {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        }
 
         window.addEventListener('resize', updateToggleButtonIcon);
 
