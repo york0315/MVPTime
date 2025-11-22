@@ -279,30 +279,35 @@ span.border-anim {
 }
 .btn-kill-header:hover { background-color: #d32f2f; }
 
-/* [修正] 計時器樣式 */
+/* [修正] 計時器置中與內距 */
 .timer-group {
     display: flex; 
     flex-direction: row; 
     align-items: center; 
-    justify-content: center; /* 水平置中 */
+    justify-content: center; 
     background: var(--timer-bg); 
-    padding: 10px 0; /* 上下增加間距，移除 min-height */
+    /* 加大上下 Padding 撐開高度，確保內容居中 */
+    padding: 12px 5px; 
     border-radius: 5px; 
     margin: 2px 0;
     z-index: 2; 
     position: relative; 
 }
 
+/* [修正] 計時器字體行高 */
 .timer-display { 
     font-size: 1.7em; 
     font-family: monospace; 
     font-weight: bold; 
     color: var(--timer-color); 
     margin: 0; 
-    line-height: normal; /* 使用自然行高，避免被切到 */
+    /* 鎖定行高並微調 padding-top 來達成視覺垂直置中 */
+    line-height: 1; 
+    padding-top: 4px; /* 將文字稍微往下推 */
+    
     letter-spacing: -0.5px; 
     text-align: center; 
-    width: 100%; /* 強制佔滿 */
+    width: 100%; 
 }
 
 .correction-area { 
