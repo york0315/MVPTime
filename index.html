@@ -57,7 +57,7 @@
         }
 
         .sidebar-header {
-            padding: 20px 15px; /* 加高一點 */
+            padding: 20px 15px;
             border-bottom: 1px solid var(--border-color);
             font-weight: bold;
             font-size: 1.2em;
@@ -98,6 +98,7 @@
         .btn-gray:hover { background-color: #555; }
         .btn-icon { background: transparent; color: var(--text-color); font-size: 1.2em; padding: 5px; }
         .btn-icon:hover { background-color: var(--hover-bg); }
+        .btn-import { background-color: #FF9800; flex: 1; margin-right: 5px; } /* 匯入按鈕橘色 */
 
         /* === 右側主內容 === */
         #main-content {
@@ -108,7 +109,6 @@
             position: relative;
         }
 
-        /* 移除原本的 Header，讓卡片區直接滿版 */
         #card-container {
             flex: 1;
             overflow-y: auto;
@@ -120,11 +120,10 @@
             align-content: start;
         }
 
-        /* === 卡片樣式 (核心修改) === */
+        /* === 卡片樣式 === */
         .boss-card {
             background-color: var(--card-bg);
-            /* 預設狀態：灰色粗框 */
-            border: var(--card-border-width) solid #666; 
+            border: var(--card-border-width) solid #666; /* 預設灰色粗框 */
             border-radius: 8px;
             padding: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -133,54 +132,17 @@
             gap: 8px;
             position: relative;
             transition: box-shadow 0.3s;
-            overflow: hidden; /* 為了動畫遮罩 */
+            overflow: hidden;
         }
 
-        /* --- 狀態 1: 倒數中 (綠色流動邊框) --- */
-        .boss-card.active {
-            border-color: transparent; /* 隱藏實體邊框，改用背景模擬 */
-            animation: none;
-        }
-
-        /* 使用偽元素製作流光動畫，避免影響內部排版 */
-        .boss-card.active::before {
-            content: '';
+        /* [修正重點] 讓邊框動畫 span 絕對定位並預設隱藏，不佔據空間 */
+        span.border-anim {
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            border-radius: 6px; 
-            padding: var(--card-border-width); 
-            background: linear-gradient(90deg, transparent 20%, var(--accent-color)); 
-            -webkit-mask: 
-                linear-gradient(#fff 0 0) content-box, 
-                linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            pointer-events: none; /* 讓點擊穿透 */
-            
-            /* 讓漸層動起來 */
-            background-size: 200% 200%;
-            animation: border-flow 2s linear infinite;
+            display: none; /* 預設不顯示 */
         }
 
-        /* 替代方案：如果不支援 mask 的瀏覽器，使用簡單的 glowing */
-        @supports not ((-webkit-mask: none) or (mask: none)) {
-            .boss-card.active {
-                border-color: var(--accent-color);
-                box-shadow: 0 0 10px var(--accent-color);
-            }
-        }
-
-        @keyframes border-flow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* 由於上面的 mask 方案比較複雜，為了最好的相容性與視覺效果(貪吃蛇跑馬燈)，
-           我們改用更經典的 4-span 動畫法 (覆蓋在最上層) */
-        
+        /* 只有在 active 狀態下才顯示並執行動畫 */
         .boss-card.active span.border-anim {
-            position: absolute;
             display: block;
         }
         .boss-card.active span.border-anim:nth-child(1) {
@@ -212,19 +174,14 @@
         @keyframes btn-anim3 { 0% { right: -100%; } 50%,100% { right: 100%; } }
         @keyframes btn-anim4 { 0% { bottom: -100%; } 50%,100% { bottom: 100%; } }
 
-        /* 當倒數時，將原始邊框設為透明，讓動畫跑 */
+        /* 狀態樣式 */
         .boss-card.active { border-color: transparent; }
-
-        /* --- 狀態 2: 時間到 (紅色粗框) --- */
         .boss-card.expired {
             border-color: var(--danger-color);
             box-shadow: 0 0 10px rgba(244, 67, 54, 0.4);
-            animation: none; /* 停止動畫 */
         }
-        .boss-card.expired span.border-anim { display: none; } /* 隱藏綠色動畫 */
 
-
-        /* --- 卡片內容 --- */
+        /* 卡片內部元素 */
         .card-header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 5px; }
         .boss-name { font-size: 1.3em; font-weight: bold; }
         .respawn-time-hint { font-size: 0.9em; color: var(--text-muted); }
@@ -235,12 +192,13 @@
             font-weight: bold;
             color: var(--text-color);
             margin-bottom: 2px;
+            min-height: 1.5em; /* 固定高度防止跳動 */
         }
 
         .timer-display {
             text-align: center; font-size: 1.8em; font-family: monospace; font-weight: bold;
             color: #ffd700; margin: 5px 0; background: #222; border-radius: 5px; padding: 5px;
-            z-index: 2; position: relative; /* 確保在動畫之上 */
+            z-index: 2; position: relative;
         }
         [data-theme="light"] .timer-display { background: #333; }
 
@@ -298,14 +256,11 @@
 
     <!-- 左側選單 -->
     <div id="sidebar">
-        <!-- 標題移至這裡 -->
         <div class="sidebar-header">
             <span>BOSS計時器</span>
             <button class="btn-icon" onclick="openSettings()" title="設定">⚙️</button>
         </div>
-        <div class="sidebar-content" id="sidebar-list">
-            <!-- JS 生成清單 -->
-        </div>
+        <div class="sidebar-content" id="sidebar-list"></div>
         <div class="sidebar-footer">
             <button class="btn-gray" onclick="toggleAll(true)">全選</button>
             <button class="btn-gray" onclick="toggleAll(false)">全取消</button>
@@ -314,10 +269,7 @@
 
     <!-- 右側內容 -->
     <div id="main-content">
-        <!-- 移除 Main Header，只留卡片容器 -->
-        <div id="card-container">
-            <!-- JS 生成卡片 -->
-        </div>
+        <div id="card-container"></div>
     </div>
 
     <!-- 設定視窗 -->
@@ -352,8 +304,14 @@
                     <div id="manage-list-container" style="max-height: 250px; overflow-y: auto;"></div>
                 </div>
                 <div class="modal-section">
-                    <h3>資料備份</h3>
-                    <button class="btn-gray" onclick="exportData()">匯出魔物清單 (.json)</button>
+                    <h3>資料管理</h3>
+                    <div style="display:flex; gap:10px;">
+                        <!-- 匯入按鈕與隱藏的 input -->
+                        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
+                        <button class="btn-import" onclick="document.getElementById('import-file').click()">匯入清單 (.json)</button>
+                        
+                        <button class="btn-gray" onclick="exportData()">匯出清單 (.json)</button>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -477,7 +435,6 @@
             card.className = 'boss-card';
             card.dataset.id = boss.id;
             card.id = `card-${boss.id}`;
-            // 插入4個 span 用於邊框動畫
             card.innerHTML = `
                 <span class="border-anim"></span>
                 <span class="border-anim"></span>
@@ -541,7 +498,6 @@
             const diff = boss.targetTime - now;
             const endDate = new Date(boss.targetTime);
             
-            // 日期格式: [ 22日 14:30 ]
             const dateStr = `${endDate.getDate()}日`;
             const timeStr = `${pad(endDate.getHours())}:${pad(endDate.getMinutes())}`;
             const statusStr = `重生時間[ ${dateStr} ${timeStr} ]`;
@@ -549,7 +505,6 @@
             if (statusEl.innerText !== statusStr) statusEl.innerText = statusStr;
 
             if (diff <= 0) {
-                // 時間到：紅色邊框
                 if (timerEl.innerText !== "已重生!") {
                     timerEl.innerText = "已重生!";
                     timerEl.style.color = "#ff4444";
@@ -558,7 +513,6 @@
                     sendNotification(boss.name);
                 }
             } else {
-                // 倒數中：綠色動畫邊框
                 const h = Math.floor(diff / 3600000);
                 const m = Math.floor((diff % 3600000) / 60000);
                 const s = Math.floor((diff % 60000) / 1000);
@@ -680,6 +634,56 @@
             a.href = dataStr;
             a.download = "ro_boss_list.json";
             a.click();
+        }
+
+        // === 新增：匯入功能 ===
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    
+                    // 格式檢查
+                    if (!Array.isArray(json)) throw new Error("檔案格式錯誤：根目錄必須是陣列");
+                    
+                    // 檢查每一筆資料是否包含必要欄位
+                    json.forEach((item, idx) => {
+                        if (!item.hasOwnProperty('id') || !item.hasOwnProperty('name') || !item.hasOwnProperty('respawnHour')) {
+                            throw new Error(`第 ${idx + 1} 筆資料缺少必要欄位 (id, name, respawnHour)`);
+                        }
+                    });
+
+                    if (confirm(`成功讀取 ${json.length} 筆資料。\n這將會覆蓋目前的清單，是否繼續？`)) {
+                        // 匯入並重設倒數時間 (或者保留 targetTime: null)
+                        allBosses = json.map(b => ({
+                            id: Number(b.id),
+                            name: String(b.name),
+                            respawnHour: Number(b.respawnHour),
+                            targetTime: null // 匯入後預設不計時，避免時間錯誤
+                        }));
+                        
+                        // 自動將新匯入的 ID 加入可見清單
+                        allBosses.forEach(b => visibleIds.add(b.id));
+                        
+                        saveData();
+                        localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
+                        
+                        renderSidebar();
+                        renderGrid();
+                        renderManageList();
+                        alert("匯入成功！");
+                    }
+
+                } catch (err) {
+                    alert("匯入失敗：\n" + err.message);
+                } finally {
+                    input.value = ''; // 清空 input 以便重複匯入同個檔案
+                }
+            };
+            reader.readAsText(file);
         }
 
         function toggleTheme() { settings.lightMode = document.getElementById('chk-theme').checked; applyTheme(); saveSettings(); }
