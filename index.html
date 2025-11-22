@@ -7,226 +7,478 @@
     <style>
         :root {
             --bg-color: #1e1e1e;
+            --sidebar-bg: #252526;
             --card-bg: #2d2d2d;
             --text-color: #e0e0e0;
             --accent-color: #4CAF50;
             --danger-color: #f44336;
-            --input-bg: #444;
+            --input-bg: #3e3e42;
+            --border-color: #444;
         }
+
+        * { box-sizing: border-box; }
+
         body {
             font-family: "Microsoft JhengHei", sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 20px;
+            height: 100vh;
+            display: flex; /* 左右佈局核心 */
+            overflow: hidden;
         }
-        h1 {
+
+        /* === 左側側邊欄 === */
+        #sidebar {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1.2em;
+            font-weight: bold;
             text-align: center;
-            border-bottom: 2px solid #444;
-            padding-bottom: 15px;
-            margin-bottom: 30px;
+            background: #181818;
         }
-        /* 讀取狀態提示 */
-        #loading-msg { text-align: center; color: #888; }
-        
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto; /* 內容過多時可捲動 */
             padding: 10px;
         }
+
+        .monster-check-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+            user-select: none;
+        }
+
+        .monster-check-item:hover { background-color: #3e3e42; }
+        .monster-check-item input { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
+        .monster-check-item label { cursor: pointer; flex: 1; font-size: 0.95em; }
+
+        .sidebar-footer {
+            padding: 10px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        /* === 右側主內容 === */
+        #main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #main-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-color);
+        }
+
+        #main-header h2 { margin: 0; font-size: 1.5em; }
+        #loading-msg { color: #aaa; font-size: 0.9em; }
+
+        /* 卡片容器區 (Scrollable) */
+        #card-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* 自動排列 */
+            grid-auto-rows: max-content;
+            gap: 20px;
+            align-content: start;
+        }
+
+        /* === 卡片樣式 === */
         .boss-card {
             background-color: var(--card-bg);
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            border-left: 5px solid #777;
+            border-left: 5px solid #666;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            position: relative;
+            /* 平滑過渡效果 */
+            transition: border-color 0.3s, transform 0.2s, opacity 0.3s; 
         }
+
         .boss-card.active { border-left-color: var(--accent-color); background-color: #333; }
-        .boss-card.expired { border-left-color: var(--danger-color); border: 2px solid var(--danger-color); }
-        
+        .boss-card.expired { border-left-color: var(--danger-color); border: 1px solid var(--danger-color); }
+
         .card-header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #444; padding-bottom: 5px; }
-        .boss-name { font-size: 1.4em; font-weight: bold; color: #fff; }
+        .boss-name { font-size: 1.3em; font-weight: bold; color: #fff; }
         .respawn-time { font-size: 0.9em; color: #aaa; }
-        
+
         .timer-display {
-            text-align: center; font-size: 2em; font-family: monospace; font-weight: bold;
-            color: #ffd700; margin: 10px 0; background: #222; border-radius: 5px; padding: 5px;
+            text-align: center; font-size: 1.8em; font-family: monospace; font-weight: bold;
+            color: #ffd700; margin: 5px 0; background: #222; border-radius: 5px; padding: 5px;
         }
-        .end-time-display { text-align: center; font-size: 0.9em; color: #888; }
-        
-        .correction-area { background-color: #3a3a3a; padding: 10px; border-radius: 5px; display: flex; align-items: center; gap: 5px; }
-        .correction-area label { font-size: 0.8em; }
-        input[type="number"] { width: 50px; background: var(--input-bg); border: 1px solid #555; color: white; padding: 5px; border-radius: 3px; text-align: center; }
-        
-        button { cursor: pointer; border: none; border-radius: 4px; padding: 8px 12px; font-weight: bold; color: white; transition: background 0.2s; }
-        .btn-update { background-color: #2196F3; font-size: 0.8em; }
+
+        .end-time-display { text-align: center; font-size: 0.85em; color: #888; }
+
+        .correction-area { background-color: #3a3a3a; padding: 8px; border-radius: 5px; display: flex; align-items: center; gap: 5px; }
+        .correction-area label { font-size: 0.8em; white-space: nowrap; }
+        input[type="number"] { width: 100%; background: var(--input-bg); border: 1px solid #555; color: white; padding: 4px; border-radius: 3px; text-align: center; }
+
+        button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; font-weight: bold; color: white; transition: background 0.2s; }
+        .btn-update { background-color: #2196F3; font-size: 0.8em; white-space: nowrap; }
         .btn-update:hover { background-color: #1976D2; }
-        .btn-kill { background-color: var(--danger-color); width: 100%; font-size: 1.1em; padding: 12px; margin-top: auto; }
+        
+        .btn-kill { background-color: var(--danger-color); width: 100%; font-size: 1em; padding: 10px; margin-top: auto; }
         .btn-kill:hover { background-color: #d32f2f; }
+
+        /* 響應式：手機版隱藏側邊欄 (或是做成漢堡選單，這裡先做簡單版) */
+        @media (max-width: 768px) {
+            body { flex-direction: column; height: auto; overflow: auto; }
+            #sidebar { width: 100%; height: 200px; border-right: none; border-bottom: 1px solid var(--border-color); }
+            #main-content { height: auto; overflow: visible; }
+        }
     </style>
 </head>
 <body>
 
-    <h1>BOSS計時器</h1>
-    <div id="loading-msg">正在讀取魔物資料 (monsters.json)...</div>
-    <div id="card-container" class="grid-container"></div>
+    <!-- 左側選單 -->
+    <div id="sidebar">
+        <div class="sidebar-header">
+            魔物篩選清單
+        </div>
+        <div class="sidebar-content" id="sidebar-list">
+            <!-- Checkbox 會由 JS 生成 -->
+        </div>
+        <div class="sidebar-footer">
+            <button onclick="toggleAll(true)" style="background:#444; font-size:0.8em;">全選</button>
+            <button onclick="toggleAll(false)" style="background:#444; font-size:0.8em;">全取消</button>
+        </div>
+    </div>
+
+    <!-- 右側內容 -->
+    <div id="main-content">
+        <div id="main-header">
+            <h2>BOSS計時器</h2>
+            <span id="loading-msg">讀取資料中...</span>
+        </div>
+        
+        <div id="card-container">
+            <!-- 卡片會由 JS 生成 -->
+        </div>
+    </div>
 
     <script>
-        let bosses = [];
+        // 全域變數
+        let allBosses = []; // 所有魔物原始資料
+        let visibleIds = new Set(); // 紀錄哪些 ID 是被打勾的
 
-        // 初始化：從 JSON 讀取資料並合併 LocalStorage
+        // 1. 初始化
         async function init() {
             try {
-                // 1. 讀取外部 JSON 檔案
+                // 讀取 JSON
                 const response = await fetch('monsters.json');
                 if (!response.ok) throw new Error("無法讀取 monsters.json");
-                const defaultBossData = await response.json();
+                const jsonData = await response.json();
 
-                // 2. 讀取瀏覽器紀錄 (LocalStorage)
-                const saved = localStorage.getItem('ro_boss_timer_data');
-                let savedBosses = [];
-                if (saved) {
-                    savedBosses = JSON.parse(saved);
-                }
+                // 讀取 倒數時間紀錄 (LocalStorage)
+                const savedTimes = JSON.parse(localStorage.getItem('ro_boss_timer_data') || '[]');
+                
+                // 讀取 勾選顯示狀態 (LocalStorage)
+                const savedVisibility = JSON.parse(localStorage.getItem('ro_boss_visible_ids') || 'null');
 
-                // 3. 合併資料：以 JSON 的設定為主，但保留 LocalStorage 的倒數時間
-                bosses = defaultBossData.map(def => {
-                    const found = savedBosses.find(s => s.id === def.id);
-                    // 如果有紀錄且紀錄還在(未過期太久)，就使用紀錄的時間
+                // 合併資料
+                allBosses = jsonData.map(def => {
+                    const found = savedTimes.find(s => s.id === def.id);
                     return found ? { ...def, targetTime: found.targetTime } : { ...def, targetTime: null };
                 });
 
-                document.getElementById('loading-msg').style.display = 'none';
-                renderCards();
-                setInterval(updateTimerDisplay, 1000);
+                // 設定顯示狀態
+                if (savedVisibility) {
+                    visibleIds = new Set(savedVisibility);
+                } else {
+                    // 預設全選
+                    allBosses.forEach(b => visibleIds.add(b.id));
+                }
+
+                document.getElementById('loading-msg').innerText = "";
+                
+                renderSidebar();
+                renderGrid(); // 建立卡片 DOM
+                
+                // 啟動每秒計時 (只更新文字，不重繪 DOM)
+                setInterval(tick, 1000);
 
             } catch (error) {
                 document.getElementById('loading-msg').innerHTML = 
-                    `讀取失敗。<br>若你在本機執行，請確保使用伺服器環境 (如 GitHub Pages) <br> 錯誤訊息: ${error.message}`;
-                console.error(error);
+                    `<span style="color:red">錯誤: ${error.message}</span><br>請確認 monsters.json 存在且格式正確`;
             }
         }
 
-        function saveData() {
-            // 只儲存 ID 和 targetTime，節省空間並允許 JSON 更新名稱
-            const dataToSave = bosses.map(b => ({ id: b.id, targetTime: b.targetTime }));
-            localStorage.setItem('ro_boss_timer_data', JSON.stringify(dataToSave));
+        // 2. 渲染左側清單 (只執行一次)
+        function renderSidebar() {
+            const sidebar = document.getElementById('sidebar-list');
+            sidebar.innerHTML = '';
+
+            allBosses.forEach(boss => {
+                const div = document.createElement('div');
+                div.className = 'monster-check-item';
+                div.onclick = (e) => {
+                    // 點擊整行也能觸發
+                    if(e.target.tagName !== 'INPUT') {
+                        const cb = div.querySelector('input');
+                        cb.checked = !cb.checked;
+                        toggleVisibility(boss.id, cb.checked);
+                    }
+                };
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `cb-${boss.id}`;
+                checkbox.checked = visibleIds.has(boss.id);
+                checkbox.onclick = (e) => {
+                    e.stopPropagation(); // 避免觸發 div 的 onclick
+                    toggleVisibility(boss.id, e.target.checked);
+                };
+
+                const label = document.createElement('label');
+                label.innerText = boss.name;
+                label.htmlFor = `cb-${boss.id}`;
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                sidebar.appendChild(div);
+            });
         }
 
+        // 3. 處理勾選/取消
+        function toggleVisibility(id, isChecked) {
+            if (isChecked) visibleIds.add(id);
+            else visibleIds.delete(id);
+
+            // 存檔
+            localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
+            
+            // 更新右側畫面 (不重繪所有，只隱藏/顯示)
+            renderGrid(); 
+        }
+
+        function toggleAll(state) {
+            allBosses.forEach(b => state ? visibleIds.add(b.id) : visibleIds.delete(b.id));
+            localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
+            renderSidebar(); // 更新 checkbox 狀態
+            renderGrid();
+        }
+
+        // 4. 渲染右側卡片 (核心邏輯：Diff更新，防止閃爍)
+        function renderGrid() {
+            const container = document.getElementById('card-container');
+            
+            // 取得目前應該顯示的魔物，並進行排序
+            const sortedList = getSortedBosses();
+
+            // --- DOM 操作策略 ---
+            // 我們不使用 innerHTML = ''，而是用 appendChild 移動元素，
+            // 這樣可以保留輸入框的焦點，並且不會閃爍。
+
+            // 先把現有的卡片做一個 Map 方便查找
+            const existingCards = {};
+            container.querySelectorAll('.boss-card').forEach(card => {
+                const id = parseInt(card.dataset.id);
+                existingCards[id] = card;
+            });
+
+            // 依照排序後的順序，將卡片加入容器 (appendChild 會自動把元素從舊位置移動到新位置)
+            sortedList.forEach(boss => {
+                // 如果這個魔物不在勾選名單，且之前有產生過卡片，就移除 (或隱藏)
+                if (!visibleIds.has(boss.id)) {
+                    if (existingCards[boss.id]) {
+                        existingCards[boss.id].remove();
+                    }
+                    return;
+                }
+
+                let card = existingCards[boss.id];
+
+                // 如果卡片不存在，建立新的
+                if (!card) {
+                    card = createCardElement(boss);
+                    existingCards[boss.id] = card; // 加入追蹤
+                }
+
+                // 更新資料綁定 (防止資料更新了但卡片是舊的)
+                updateCardVisuals(card, boss);
+
+                // 將卡片移動到最後 (因為我們是依照順序迴圈，所以會自動排好)
+                container.appendChild(card);
+            });
+
+            // 清理：如果有卡片已經不在 sortedList (例如資料庫刪除了)，但畫面上還有，要移除
+            // (因為我們是跑 sortedList，這裡比較少發生，主要是處理 Unchecked)
+        }
+
+        // 5. 建立單一卡片 DOM
+        function createCardElement(boss) {
+            const card = document.createElement('div');
+            card.className = 'boss-card';
+            card.id = `card-${boss.id}`;
+            card.dataset.id = boss.id; // 方便查找
+            
+            card.innerHTML = `
+                <div class="card-header">
+                    <span class="boss-name">${boss.name}</span>
+                    <span class="respawn-time">(${boss.respawnHour}H)</span>
+                </div>
+                <div class="timer-display" id="timer-${boss.id}">--:--:--</div>
+                <div class="end-time-display" id="end-${boss.id}">--:--</div>
+                <div class="correction-area">
+                    <label>修正:</label>
+                    <input type="number" id="h-${boss.id}" placeholder="時" min="0">
+                    <input type="number" id="m-${boss.id}" placeholder="分" min="0">
+                    <button class="btn-update" onclick="manualUpdate(${boss.id})">更新</button>
+                </div>
+                <button class="btn-kill" onclick="killBoss(${boss.id})">擊殺</button>
+            `;
+            return card;
+        }
+
+        // 6. 排序邏輯
         function getSortedBosses() {
-            return [...bosses].sort((a, b) => {
+            return [...allBosses].sort((a, b) => {
                 const now = Date.now();
                 const aActive = a.targetTime !== null;
                 const bActive = b.targetTime !== null;
 
+                // 兩者都在倒數：剩餘時間短的排前面
                 if (aActive && bActive) return (a.targetTime - now) - (b.targetTime - now);
+                // A 倒數中，B 沒倒數 -> A 前
                 if (aActive && !bActive) return -1;
+                // B 倒數中，A 沒倒數 -> B 前
                 if (!aActive && bActive) return 1;
+                // 都沒倒數 -> 照 ID
                 return a.id - b.id;
             });
         }
 
-        function renderCards() {
-            const container = document.getElementById('card-container');
-            container.innerHTML = '';
-            const sortedList = getSortedBosses();
-
-            sortedList.forEach(boss => {
-                const card = document.createElement('div');
-                card.className = 'boss-card';
-                card.id = `card-${boss.id}`;
-                if (boss.targetTime !== null) card.classList.add('active');
-
-                card.innerHTML = `
-                    <div class="card-header">
-                        <span class="boss-name">${boss.name}</span>
-                        <span class="respawn-time">(${boss.respawnHour}H)</span>
-                    </div>
-                    <div class="timer-display" id="timer-${boss.id}">--:--:--</div>
-                    <div class="end-time-display" id="end-${boss.id}">預計重生: --:--</div>
-                    <div class="correction-area">
-                        <label>修正:</label>
-                        <input type="number" id="h-${boss.id}" placeholder="時" min="0">
-                        <input type="number" id="m-${boss.id}" placeholder="分" min="0">
-                        <button class="btn-update" onclick="manualUpdate(${boss.id})">更新</button>
-                    </div>
-                    <button class="btn-kill" onclick="killBoss(${boss.id})">擊殺 (開始倒數)</button>
-                `;
-                container.appendChild(card);
-            });
-            updateTimerDisplay();
+        // 7. 存檔
+        function saveData() {
+            const dataToSave = allBosses.map(b => ({ id: b.id, targetTime: b.targetTime }));
+            localStorage.setItem('ro_boss_timer_data', JSON.stringify(dataToSave));
         }
 
-        function updateTimerDisplay() {
-            const now = Date.now();
-            bosses.forEach(boss => {
-                const timerEl = document.getElementById(`timer-${boss.id}`);
-                const endEl = document.getElementById(`end-${boss.id}`);
-                const cardEl = document.getElementById(`card-${boss.id}`);
-                if (!timerEl || !cardEl) return;
-
-                if (boss.targetTime === null) {
-                    timerEl.innerText = "未計時";
-                    timerEl.style.color = "#777";
-                    endEl.innerText = "等待擊殺...";
-                    cardEl.classList.remove('active', 'expired');
-                    return;
-                }
-
-                const diff = boss.targetTime - now;
-                const endDate = new Date(boss.targetTime);
-                endEl.innerText = `預計重生: ${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}:${String(endDate.getSeconds()).padStart(2, '0')}`;
-
-                if (diff <= 0) {
-                    timerEl.innerText = "已重生!";
-                    timerEl.style.color = "#ff4444";
-                    cardEl.classList.remove('active');
-                    cardEl.classList.add('expired');
-                } else {
-                    const h = Math.floor(diff / 3600000);
-                    const m = Math.floor((diff % 3600000) / 60000);
-                    const s = Math.floor((diff % 60000) / 1000);
-                    timerEl.innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-                    timerEl.style.color = "#ffd700";
-                    cardEl.classList.add('active');
-                    cardEl.classList.remove('expired');
-                }
-            });
-        }
-
+        // 8. 操作：擊殺
         function killBoss(id) {
-            const boss = bosses.find(b => b.id === id);
+            const boss = allBosses.find(b => b.id === id);
             if (boss) {
                 boss.targetTime = Date.now() + (boss.respawnHour * 3600000);
                 saveData();
-                renderCards();
+                renderGrid(); // 只有動作發生時才重新排序 DOM
             }
         }
 
+        // 9. 操作：手動修正
         function manualUpdate(id) {
-            const boss = bosses.find(b => b.id === id);
-            const h = parseInt(document.getElementById(`h-${id}`).value) || 0;
-            const m = parseInt(document.getElementById(`m-${id}`).value) || 0;
-            
+            const boss = allBosses.find(b => b.id === id);
+            const hInput = document.getElementById(`h-${id}`);
+            const mInput = document.getElementById(`m-${id}`);
+            const h = parseInt(hInput.value) || 0;
+            const m = parseInt(mInput.value) || 0;
+
             if (boss) {
-                const inputsEmpty = document.getElementById(`h-${id}`).value === "" && document.getElementById(`m-${id}`).value === "";
-                if (inputsEmpty && h === 0 && m === 0) {
+                if (hInput.value === "" && mInput.value === "" && h === 0 && m === 0) {
                     boss.targetTime = null; // 清除
                 } else {
                     boss.targetTime = Date.now() + (h * 3600000) + (m * 60000);
                 }
-                document.getElementById(`h-${id}`).value = '';
-                document.getElementById(`m-${id}`).value = '';
+                hInput.value = '';
+                mInput.value = '';
                 saveData();
-                renderCards();
+                renderGrid(); // 重新排序
             }
         }
 
+        // 10. 每秒執行：更新文字與顏色 (最輕量化)
+        function tick() {
+            const now = Date.now();
+            
+            // 只針對有顯示在畫面上的卡片做更新
+            // (不用跑 allBosses，跑 visibleIds 也可以，但直接抓 DOM 比較直覺)
+            const cards = document.querySelectorAll('.boss-card');
+            
+            cards.forEach(card => {
+                const id = parseInt(card.dataset.id);
+                const boss = allBosses.find(b => b.id === id);
+                if(boss) updateCardVisuals(card, boss, now);
+            });
+        }
+
+        // 輔助：更新單一卡片的視覺狀態 (不改結構)
+        function updateCardVisuals(card, boss, now = Date.now()) {
+            const timerEl = card.querySelector(`#timer-${boss.id}`);
+            const endEl = card.querySelector(`#end-${boss.id}`);
+
+            if (boss.targetTime === null) {
+                if (timerEl.innerText !== "未計時") { // 簡單的 Diff 檢查
+                    timerEl.innerText = "未計時";
+                    timerEl.style.color = "#777";
+                    endEl.innerText = "等待擊殺...";
+                    card.classList.remove('active', 'expired');
+                }
+                return;
+            }
+
+            const diff = boss.targetTime - now;
+            
+            // 更新預計時間 (只算一次字串)
+            const endDate = new Date(boss.targetTime);
+            const endTimeStr = `預計: ${pad(endDate.getHours())}:${pad(endDate.getMinutes())}:${pad(endDate.getSeconds())}`;
+            if (endEl.innerText !== endTimeStr) endEl.innerText = endTimeStr;
+
+            if (diff <= 0) {
+                // 時間到
+                if (timerEl.innerText !== "已重生!") {
+                    timerEl.innerText = "已重生!";
+                    timerEl.style.color = "#ff4444";
+                    card.classList.remove('active');
+                    card.classList.add('expired');
+                }
+            } else {
+                // 倒數中
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                const timeStr = `${pad(h)}:${pad(m)}:${pad(s)}`;
+                
+                // 只有文字變才寫入 DOM
+                if (timerEl.innerText !== timeStr) {
+                    timerEl.innerText = timeStr;
+                    timerEl.style.color = "#ffd700";
+                }
+                
+                if (!card.classList.contains('active')) {
+                    card.classList.add('active');
+                    card.classList.remove('expired');
+                }
+            }
+        }
+
+        function pad(n) { return n < 10 ? '0'+n : n; }
+
+        // 啟動
         init();
     </script>
 </body>
