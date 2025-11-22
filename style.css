@@ -20,7 +20,7 @@
     --card-width: 320px; 
 }
 
-/* 深色模式 (Dark Mode) - 提高權重 */
+/* 深色模式 (Dark Mode) */
 html[data-theme="dark"] {
     --bg-color: #1e1e1e;
     --sidebar-bg: #252526;
@@ -42,9 +42,8 @@ body {
     color: var(--text-color);
     margin: 0;
     height: 100vh;
-    height: 100dvh; /* 手機網址列相容 */
     display: flex;
-    overflow: hidden; /* 防止 Body 滾動 */
+    overflow: hidden;
     transition: background 0.3s, color 0.3s;
 }
 
@@ -62,17 +61,18 @@ body {
     overflow: visible;
 }
 
+/* 側邊欄開關按鈕 - 完美貼底 */
 .sidebar-toggle-tab {
     position: absolute;
     top: auto;
-    bottom: 0;
+    bottom: 0; /* 緊貼底部 */
     left: 100%;
     width: 24px;
     height: 80px;
     background-color: var(--sidebar-bg);
     border: 1px solid var(--border-color);
     border-left: none;
-    border-radius: 0 8px 0 0;
+    border-radius: 0 8px 8px 0; /* 調整圓角 */
     color: var(--text-muted);
     cursor: pointer;
     display: flex;
@@ -120,7 +120,7 @@ body {
     flex-shrink: 0;
 }
 .notify-row { display: flex; align-items: center; justify-content: space-between; }
-.notify-row label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.notify-row label { display: flex; align-items: center; gap: 5px; cursor: pointer; width: 100%; }
 .notify-row label.disabled { color: var(--text-muted); opacity: 0.6; cursor: not-allowed; }
 
 .notify-input-group { display: flex; align-items: center; gap: 5px; }
@@ -223,16 +223,16 @@ button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; f
     gap: 20px;
     align-content: start;
     justify-content: start; 
-    /* [手機滾動修復] 確保容器可以被滾動 */
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
-    padding-bottom: 100px; /* 確保底部內容不被遮擋 */
-    overscroll-behavior-y: contain; /* 防止連動父層滾動 */
+    padding-bottom: 100px;
+    overscroll-behavior-y: contain;
 }
 
 /* === 卡片樣式 === */
 .boss-card {
     background-color: var(--card-bg);
+    /* 預設灰色邊框 */
     border: var(--card-border-width) solid #666;
     border-radius: 8px;
     padding: 12px;
@@ -248,8 +248,14 @@ button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; f
     height: auto;
 }
 
-span.border-anim { position: absolute; display: none; }
+/* [修復] 綠色流光動畫 */
+span.border-anim { 
+    position: absolute; 
+    display: none; 
+    z-index: 1; /* 確保在背景之上 */
+}
 .boss-card.active span.border-anim { display: block; }
+
 .boss-card.active span.border-anim:nth-child(1) { top: 0; left: -100%; width: 100%; height: var(--card-border-width); background: linear-gradient(90deg, transparent, var(--accent-color)); animation: btn-anim1 1.5s linear infinite; }
 .boss-card.active span.border-anim:nth-child(2) { top: -100%; right: 0; width: var(--card-border-width); height: 100%; background: linear-gradient(180deg, transparent, var(--accent-color)); animation: btn-anim2 1.5s linear infinite; animation-delay: 0.375s; }
 .boss-card.active span.border-anim:nth-child(3) { bottom: 0; right: -100%; width: 100%; height: var(--card-border-width); background: linear-gradient(270deg, transparent, var(--accent-color)); animation: btn-anim3 1.5s linear infinite; animation-delay: 0.75s; }
@@ -260,10 +266,16 @@ span.border-anim { position: absolute; display: none; }
 @keyframes btn-anim3 { 0% { right: -100%; } 50%,100% { right: 100%; } }
 @keyframes btn-anim4 { 0% { bottom: -100%; } 50%,100% { bottom: 100%; } }
 
-.boss-card.active { border-color: transparent; }
-.boss-card.expired { border-color: var(--danger-color); box-shadow: 0 0 10px rgba(244, 67, 54, 0.4); }
+/* [修復] 強制隱藏原本邊框，讓動畫顯示 */
+.boss-card.active { 
+    border-color: transparent !important; 
+}
+.boss-card.expired { 
+    border-color: var(--danger-color) !important; 
+    box-shadow: 0 0 10px rgba(244, 67, 54, 0.4); 
+}
 
-.card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 5px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 5px; position: relative; z-index: 2; }
 .header-left { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; flex: 1; }
 .boss-duration { font-size: 0.9em; color: var(--accent-color); font-weight: bold; font-family: monospace; }
 .boss-name { font-size: 1.3em; font-weight: bold; }
@@ -275,13 +287,31 @@ span.border-anim { position: absolute; display: none; }
 .btn-kill-header:hover { background-color: #d32f2f; }
 
 .timer-group {
-    display: flex; flexDirection: row; alignItems: center; justifyContent: center;
-    background: var(--timer-bg); padding: 5px; border-radius: 5px; margin: 2px 0;
-    z-index: 2; position: relative; min-height: 45px;
+    display: flex; 
+    flex-direction: row; 
+    align-items: center; 
+    justify-content: center; 
+    background: var(--timer-bg); 
+    padding: 5px; 
+    border-radius: 5px; 
+    margin: 2px 0;
+    z-index: 2; 
+    position: relative; 
+    min-height: 45px;
 }
 
+/* [修復] 計時器文字置中與寬度 */
 .timer-display { 
-    font-size: 1.7em; font-family: monospace; font-weight: bold; color: var(--timer-color); margin: 0; line-height: 1; letter-spacing: -0.5px; text-align: center; width: 100%; 
+    font-size: 1.7em; 
+    font-family: monospace; 
+    font-weight: bold; 
+    color: var(--timer-color); 
+    margin: 0; 
+    line-height: 1; 
+    letter-spacing: -0.5px; 
+    text-align: center; 
+    width: 100%; /* 確保佔滿寬度以置中 */
+    flex: 1; /* Flex 撐開 */
 }
 
 .correction-area { 
