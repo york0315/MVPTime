@@ -73,18 +73,47 @@
             padding: 10px;
         }
 
+        /* 側邊欄項目樣式優化 */
         .monster-check-item {
             display: flex;
             align-items: center;
-            padding: 8px 10px;
+            padding: 8px 5px;
             cursor: pointer;
             border-radius: 4px;
             user-select: none;
             border-bottom: 1px solid transparent;
         }
         .monster-check-item:hover { background-color: var(--hover-bg); }
-        .monster-check-item input { margin-right: 10px; cursor: pointer; transform: scale(1.2); }
-        .monster-check-item label { cursor: pointer; flex: 1; }
+        .monster-check-item input { margin-right: 8px; cursor: pointer; transform: scale(1.1); }
+        
+        /* 讓 Label 變成 Flex 容器以利對齊 */
+        .sidebar-label {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            font-size: 0.95em;
+        }
+        
+        /* 時間徽章樣式 */
+        .time-badge {
+            display: inline-block;
+            width: 50px; /* 固定寬度 */
+            text-align: center; /* 置中 */
+            background-color: var(--input-bg);
+            border-radius: 4px;
+            padding: 2px 0;
+            margin-right: 8px;
+            font-family: monospace;
+            font-weight: bold;
+            color: var(--accent-color);
+            flex-shrink: 0; /* 防止被擠壓 */
+        }
+
+        .name-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
         .sidebar-footer {
             padding: 10px;
@@ -98,7 +127,7 @@
         .btn-gray:hover { background-color: #555; }
         .btn-icon { background: transparent; color: var(--text-color); font-size: 1.2em; padding: 5px; }
         .btn-icon:hover { background-color: var(--hover-bg); }
-        .btn-import { background-color: #FF9800; flex: 1; margin-right: 5px; } /* 匯入按鈕橘色 */
+        .btn-import { background-color: #FF9800; flex: 1; margin-right: 5px; }
 
         /* === 右側主內容 === */
         #main-content {
@@ -123,7 +152,7 @@
         /* === 卡片樣式 === */
         .boss-card {
             background-color: var(--card-bg);
-            border: var(--card-border-width) solid #666; /* 預設灰色粗框 */
+            border: var(--card-border-width) solid #666;
             border-radius: 8px;
             padding: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -131,125 +160,58 @@
             flex-direction: column;
             gap: 8px;
             position: relative;
+            /* 移除 transition: transform，改由 JS 控制動畫 */
             transition: box-shadow 0.3s;
             overflow: hidden;
+            will-change: transform; /* 效能優化 */
         }
 
-        /* [修正重點] 讓邊框動畫 span 絕對定位並預設隱藏，不佔據空間 */
-        span.border-anim {
-            position: absolute;
-            display: none; /* 預設不顯示 */
-        }
-
-        /* 只有在 active 狀態下才顯示並執行動畫 */
-        .boss-card.active span.border-anim {
-            display: block;
-        }
-        .boss-card.active span.border-anim:nth-child(1) {
-            top: 0; left: -100%; width: 100%; height: var(--card-border-width);
-            background: linear-gradient(90deg, transparent, var(--accent-color));
-            animation: btn-anim1 1.5s linear infinite;
-        }
-        .boss-card.active span.border-anim:nth-child(2) {
-            top: -100%; right: 0; width: var(--card-border-width); height: 100%;
-            background: linear-gradient(180deg, transparent, var(--accent-color));
-            animation: btn-anim2 1.5s linear infinite;
-            animation-delay: 0.375s;
-        }
-        .boss-card.active span.border-anim:nth-child(3) {
-            bottom: 0; right: -100%; width: 100%; height: var(--card-border-width);
-            background: linear-gradient(270deg, transparent, var(--accent-color));
-            animation: btn-anim3 1.5s linear infinite;
-            animation-delay: 0.75s;
-        }
-        .boss-card.active span.border-anim:nth-child(4) {
-            bottom: -100%; left: 0; width: var(--card-border-width); height: 100%;
-            background: linear-gradient(360deg, transparent, var(--accent-color));
-            animation: btn-anim4 1.5s linear infinite;
-            animation-delay: 1.125s;
-        }
+        span.border-anim { position: absolute; display: none; }
+        .boss-card.active span.border-anim { display: block; }
+        .boss-card.active span.border-anim:nth-child(1) { top: 0; left: -100%; width: 100%; height: var(--card-border-width); background: linear-gradient(90deg, transparent, var(--accent-color)); animation: btn-anim1 1.5s linear infinite; }
+        .boss-card.active span.border-anim:nth-child(2) { top: -100%; right: 0; width: var(--card-border-width); height: 100%; background: linear-gradient(180deg, transparent, var(--accent-color)); animation: btn-anim2 1.5s linear infinite; animation-delay: 0.375s; }
+        .boss-card.active span.border-anim:nth-child(3) { bottom: 0; right: -100%; width: 100%; height: var(--card-border-width); background: linear-gradient(270deg, transparent, var(--accent-color)); animation: btn-anim3 1.5s linear infinite; animation-delay: 0.75s; }
+        .boss-card.active span.border-anim:nth-child(4) { bottom: -100%; left: 0; width: var(--card-border-width); height: 100%; background: linear-gradient(360deg, transparent, var(--accent-color)); animation: btn-anim4 1.5s linear infinite; animation-delay: 1.125s; }
 
         @keyframes btn-anim1 { 0% { left: -100%; } 50%,100% { left: 100%; } }
         @keyframes btn-anim2 { 0% { top: -100%; } 50%,100% { top: 100%; } }
         @keyframes btn-anim3 { 0% { right: -100%; } 50%,100% { right: 100%; } }
         @keyframes btn-anim4 { 0% { bottom: -100%; } 50%,100% { bottom: 100%; } }
 
-        /* 狀態樣式 */
         .boss-card.active { border-color: transparent; }
-        .boss-card.expired {
-            border-color: var(--danger-color);
-            box-shadow: 0 0 10px rgba(244, 67, 54, 0.4);
-        }
+        .boss-card.expired { border-color: var(--danger-color); box-shadow: 0 0 10px rgba(244, 67, 54, 0.4); }
 
-        /* 卡片內部元素 */
         .card-header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 5px; }
         .boss-name { font-size: 1.3em; font-weight: bold; }
         .respawn-time-hint { font-size: 0.9em; color: var(--text-muted); }
 
-        .status-display {
-            text-align: center;
-            font-size: 1.2em; 
-            font-weight: bold;
-            color: var(--text-color);
-            margin-bottom: 2px;
-            min-height: 1.5em; /* 固定高度防止跳動 */
-        }
-
-        .timer-display {
-            text-align: center; font-size: 1.8em; font-family: monospace; font-weight: bold;
-            color: #ffd700; margin: 5px 0; background: #222; border-radius: 5px; padding: 5px;
-            z-index: 2; position: relative;
-        }
+        .status-display { text-align: center; font-size: 1.2em; font-weight: bold; color: var(--text-color); margin-bottom: 2px; min-height: 1.5em; }
+        .timer-display { text-align: center; font-size: 1.8em; font-family: monospace; font-weight: bold; color: #ffd700; margin: 5px 0; background: #222; border-radius: 5px; padding: 5px; z-index: 2; position: relative; }
         [data-theme="light"] .timer-display { background: #333; }
 
-        .correction-area { 
-            background-color: var(--input-bg); padding: 8px; border-radius: 5px; 
-            display: flex; align-items: center; gap: 5px; z-index: 2; position: relative;
-        }
+        .correction-area { background-color: var(--input-bg); padding: 8px; border-radius: 5px; display: flex; align-items: center; gap: 5px; z-index: 2; position: relative; }
         .correction-area label { white-space: nowrap; font-size: 0.9em; }
-        
-        input[type="number"] { 
-            background: var(--bg-color); border: 1px solid var(--border-color); 
-            color: var(--text-color); padding: 5px; border-radius: 3px; 
-            width: 60px; text-align: center;
-        }
+        input[type="number"] { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; width: 60px; text-align: center; }
         
         .btn-update { background-color: #2196F3; font-size: 0.8em; white-space: nowrap; padding: 6px 10px; }
         .btn-kill { background-color: var(--danger-color); width: 100%; font-size: 1em; padding: 10px; margin-top: auto; z-index: 2; position: relative; cursor: pointer; }
         .btn-kill:hover { background-color: #d32f2f; }
 
         /* === 設定視窗 (Modal) === */
-        #settings-modal {
-            display: none;
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 100;
-            justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background: var(--modal-bg);
-            width: 500px; max-width: 95%; max-height: 90vh;
-            border-radius: 8px;
-            display: flex; flex-direction: column;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
+        #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: var(--modal-bg); width: 500px; max-width: 95%; max-height: 90vh; border-radius: 8px; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         .modal-header { padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; display: flex; justify-content: space-between; }
         .modal-body { padding: 20px; overflow-y: auto; }
         .modal-section { margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px; }
         .modal-section:last-child { border: none; }
         .modal-footer { padding: 15px; border-top: 1px solid var(--border-color); text-align: right; }
 
-        .manage-list-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px; background: var(--input-bg); margin-bottom: 5px; border-radius: 4px;
-            cursor: grab; transition: background 0.2s, transform 0.2s;
-        }
+        .manage-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--input-bg); margin-bottom: 5px; border-radius: 4px; cursor: grab; transition: background 0.2s, transform 0.2s; }
         .manage-list-item:active { cursor: grabbing; }
         .manage-list-item.dragging { opacity: 0.5; background: var(--accent-color); border: 2px dashed #fff; }
         .manage-list-item.drag-over { border-bottom: 3px solid var(--accent-color); }
         .manage-controls button { font-size: 0.8em; padding: 4px 8px; }
         input[type="text"] { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px; border-radius: 3px; width: 100%; }
-
     </style>
 </head>
 <body>
@@ -306,10 +268,8 @@
                 <div class="modal-section">
                     <h3>資料管理</h3>
                     <div style="display:flex; gap:10px;">
-                        <!-- 匯入按鈕與隱藏的 input -->
                         <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
                         <button class="btn-import" onclick="document.getElementById('import-file').click()">匯入清單 (.json)</button>
-                        
                         <button class="btn-gray" onclick="exportData()">匯出清單 (.json)</button>
                     </div>
                 </div>
@@ -388,8 +348,15 @@
                 checkbox.style.width = 'auto';
                 checkbox.checked = visibleIds.has(boss.id);
                 checkbox.onclick = (e) => { e.stopPropagation(); toggleVisibility(boss.id, e.target.checked); };
+                
+                // [修改] 將時間與名稱分開，使用 Flexbox 對齊
                 const label = document.createElement('label');
-                label.innerText = `${boss.name} (${boss.respawnHour}H)`;
+                label.className = 'sidebar-label';
+                label.innerHTML = `
+                    <span class="time-badge">(${boss.respawnHour}H)</span>
+                    <span class="name-text">${boss.name}</span>
+                `;
+
                 div.appendChild(checkbox);
                 div.appendChild(label);
                 list.appendChild(div);
@@ -409,9 +376,18 @@
             renderGrid();
         }
 
+        // [修改] 增加 FLIP 動畫邏輯
         function renderGrid() {
             const container = document.getElementById('card-container');
             const sortedList = getSortedBosses();
+            
+            // 1. First: 記錄所有卡片目前的位置
+            const firstPositions = new Map();
+            container.querySelectorAll('.boss-card').forEach(card => {
+                firstPositions.set(card.dataset.id, card.getBoundingClientRect());
+            });
+
+            // 2. DOM 操作 (保留輸入狀態)
             const existingCards = {};
             container.querySelectorAll('.boss-card').forEach(c => existingCards[c.dataset.id] = c);
 
@@ -426,7 +402,32 @@
                     existingCards[boss.id] = card;
                 }
                 updateCardVisuals(card, boss);
+                // appendChild 會將現有元素移動到新位置 (改變順序)
                 container.appendChild(card);
+            });
+
+            // 3. Last & Invert & Play: 計算位移並執行動畫
+            container.querySelectorAll('.boss-card').forEach(card => {
+                const first = firstPositions.get(card.dataset.id);
+                if (first) {
+                    const last = card.getBoundingClientRect();
+                    
+                    // 計算位移量 (Delta)
+                    const deltaX = first.left - last.left;
+                    const deltaY = first.top - last.top;
+
+                    // 如果有位移，執行動畫
+                    if (deltaX !== 0 || deltaY !== 0) {
+                        card.animate([
+                            { transform: `translate(${deltaX}px, ${deltaY}px)` },
+                            { transform: 'none' }
+                        ], {
+                            duration: 400, // 動畫時間
+                            easing: 'cubic-bezier(0.2, 0, 0.2, 1)', // 緩衝曲線
+                            fill: 'both'
+                        });
+                    }
+                }
             });
         }
 
@@ -636,52 +637,30 @@
             a.click();
         }
 
-        // === 新增：匯入功能 ===
         function importData(input) {
             const file = input.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const json = JSON.parse(e.target.result);
-                    
-                    // 格式檢查
-                    if (!Array.isArray(json)) throw new Error("檔案格式錯誤：根目錄必須是陣列");
-                    
-                    // 檢查每一筆資料是否包含必要欄位
+                    if (!Array.isArray(json)) throw new Error("檔案格式錯誤");
                     json.forEach((item, idx) => {
                         if (!item.hasOwnProperty('id') || !item.hasOwnProperty('name') || !item.hasOwnProperty('respawnHour')) {
-                            throw new Error(`第 ${idx + 1} 筆資料缺少必要欄位 (id, name, respawnHour)`);
+                            throw new Error(`第 ${idx + 1} 筆資料錯誤`);
                         }
                     });
-
-                    if (confirm(`成功讀取 ${json.length} 筆資料。\n這將會覆蓋目前的清單，是否繼續？`)) {
-                        // 匯入並重設倒數時間 (或者保留 targetTime: null)
-                        allBosses = json.map(b => ({
-                            id: Number(b.id),
-                            name: String(b.name),
-                            respawnHour: Number(b.respawnHour),
-                            targetTime: null // 匯入後預設不計時，避免時間錯誤
-                        }));
-                        
-                        // 自動將新匯入的 ID 加入可見清單
+                    if (confirm(`成功讀取 ${json.length} 筆資料。是否覆蓋？`)) {
+                        allBosses = json.map(b => ({ id: Number(b.id), name: String(b.name), respawnHour: Number(b.respawnHour), targetTime: null }));
                         allBosses.forEach(b => visibleIds.add(b.id));
-                        
                         saveData();
                         localStorage.setItem('ro_boss_visible_ids', JSON.stringify([...visibleIds]));
-                        
                         renderSidebar();
                         renderGrid();
                         renderManageList();
                         alert("匯入成功！");
                     }
-
-                } catch (err) {
-                    alert("匯入失敗：\n" + err.message);
-                } finally {
-                    input.value = ''; // 清空 input 以便重複匯入同個檔案
-                }
+                } catch (err) { alert("匯入失敗：" + err.message); } finally { input.value = ''; }
             };
             reader.readAsText(file);
         }
